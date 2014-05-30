@@ -1,2 +1,2 @@
-yolo-octo-bear
+Web Retrieval and Mining Project
 ==============
