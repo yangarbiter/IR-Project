@@ -18,6 +18,16 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         print("websocket closed")
 
 
+class InfoHandler(BaseHandler):
+    def post(self):
+        speech_info = {}
+        speech_info['title'] = self.get_argument('title')
+        speech_info['speaker'] = self.get_argument('speaker')
+        speech_info['description'] = self.get_argument('description')
+        speech_info['biography'] = self.get_argument('biography')
+        print(speech_info)
+
+
 class MainHandler(BaseHandler):
     def get(self):
         self.render("index.html")
@@ -25,6 +35,7 @@ class MainHandler(BaseHandler):
 
 application = tornado.web.Application([
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
+    (r"/info", InfoHandler),
     (r"/ws", WebSocketHandler),
     (r"/", MainHandler),
 ])

@@ -1,6 +1,4 @@
 
-
-
 window.onload = function(){
 	var recognizer = new webkitSpeechRecognition();
 	var transcription = document.getElementById('transcription');
@@ -36,6 +34,12 @@ window.onload = function(){
 
 	document.getElementById('btn-start-recog').addEventListener('click', function() {
 		try {
+			info = {title: $('#info-title').val(),
+							speaker: $('#info-speaker').val(),
+							description: $('#info-description').val(),
+							biography: $('#info-biography').val()}
+			console.log(info);
+			$.post("info", info);
 			recognizer.start();
 			console.log('Recognizer started');
 		} catch(ex) {
