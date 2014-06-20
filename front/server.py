@@ -1,5 +1,7 @@
 #!/usr/bin/python3
+
 import tornado.ioloop, tornado.web, tornado.websocket
+import json
 
 STATIC_PATH = './static'
 RESULT_PATH = './result'
@@ -21,11 +23,25 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         print(message)
-        self.write_message('test')
+        msgs = []
+
+        msg = {}
+        msg['title'] = 'Test'
+        msg['content'] = 'ttt'
+        msg['vocab'] = 'Apple'
+        msgs.append(msg)
+
+        self.write_message(json.dumps(msgs))
 
     def on_close(self):
         pass
         #print("websocket closed")
+
+class FeedbackHandler(BaseHandler):
+    def post(self):
+        fb_type = self.get_argument('type')  # accept or remove
+        vocab = self.get_argument('vocab')  
+        print(fb_type, vocab)
 
 
 class InfoHandler(BaseHandler):
@@ -46,6 +62,7 @@ class MainHandler(BaseHandler):
 application = tornado.web.Application([
     (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
     (r"/info", InfoHandler),
+    (r"/fb", FeedbackHandler),
     (r"/ws", WebSocketHandler),
     (r"/", MainHandler),
 ])

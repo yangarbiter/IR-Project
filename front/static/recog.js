@@ -9,11 +9,49 @@ window.onload = function(){
 		//console.log("ws open");
 	};
 	ws.onmessage = function(event) {
-		var msg = event.data;
-		var entry = document.createElement('div');
-		entry.innerHTML = msg;
-		result_container.appendChild(entry);
+		var msg = JSON.parse(event.data);
+		for(i=0; i<msg.length; i++){
+			var entry = document.createElement('div');
+			var title = document.createElement('div');
+			var content = document.createElement('div');
+			var btn_del = document.createElement('button');
+			var btn_acc = document.createElement('button');
+
+			entry.className = 'entry';
+
+			btn_del.nodeType = "button";
+			btn_del.id = 'btn-del'.concat(msg[i].vocab);
+			btn_del.className = "btn btn-default btn-sm btn-del";
+			btn_del.appendChild(document.createElement('span'));
+			btn_del.firstChild.className = "glyphicon glyphicon-remove";
+			btn_del.addEventListener('click', function(){
+				$.post("fb", { type: 'remove', vocab: this.id.substr(7, this.id.length-7)});
+			});
+
+			btn_acc.nodeType = "button";
+			btn_acc.id = 'btn-acc'.concat(msg[i].vocab);
+			btn_acc.className = "btn btn-default btn-sm btn-acc";
+			btn_acc.appendChild(document.createElement('span'));
+			btn_acc.firstChild.className = "glyphicon glyphicon-ok";
+			btn_acc.addEventListener('click', function(){
+				$.post("fb", { type: 'accept', vocab: this.id.substr(7, this.id.length-7)});
+			});
+
+			title.innerHTML = msg[i].title;
+			title.className = 'entry-title';
+
+			content.innerHTML = msg[i].content;
+			content.className = 'entry-content';
+
+			entry.appendChild(title);
+			entry.appendChild(btn_acc);
+			entry.appendChild(btn_del);
+			entry.appendChild(content);
+
+			result_container.appendChild(entry);
+		}
 	};
+
 
 	// recognizer setting
 	recognizer.interimResults = true;
@@ -59,5 +97,6 @@ window.onload = function(){
 		recognizer.stop();
 		//console.log('Recognition stopped')
 	});
+
 
 };
