@@ -2,6 +2,13 @@
 import tornado.ioloop, tornado.web, tornado.websocket
 
 STATIC_PATH = './static'
+RESULT_PATH = './result'
+
+
+def getResult():
+    with open(RESULT_PATH, "r") as f:
+        pass
+
 
 class BaseHandler(tornado.web.RequestHandler):
     pass
@@ -9,13 +16,16 @@ class BaseHandler(tornado.web.RequestHandler):
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def open(self):
-        print('websocket open')
+        pass
+        #print('websocket open')
 
     def on_message(self, message):
         print(message)
+        self.write_message('test')
 
     def on_close(self):
-        print("websocket closed")
+        pass
+        #print("websocket closed")
 
 
 class InfoHandler(BaseHandler):

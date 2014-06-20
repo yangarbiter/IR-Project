@@ -3,27 +3,40 @@
 <head>
 	<meta charset="UTF-8">
 	<title></title>
+	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
 	<script src="static/recog.js"></script>
 </head>
 <body>
-	<div>Title</div>
-	<textarea id="info-title"></textarea> <br>
-	<div>Speaker</div>
-	<textarea id="info-speaker"></textarea> <br>
-	<div>Description</div>
-	<textarea id="info-description"></textarea><br>
-	<div>Biography</div>
-	<textarea id="info-biography"></textarea><br>
+	<div class="container-fluid">
+	</div>
+	<div class="container" style="margin-top: 5px;">
 
-	<textarea id="transcription" readonly="readonly"></textarea>
+		<div class="btn-wrapper">
+			<button id="btn-start-recog" class="btn btn-success">Start</button>
+			<button id="btn-stop-recog" class="btn btn-danger">Stop</button>
+		</div>
 
-	<h3>log</h3>
-	<div id="log"></div>
+		<div id="info-container">
+			<div>Title</div>
+			<textarea id="info-title" class="form-control" placeholder="Title" rows='1'></textarea> <br>
+			<div>Speaker</div>
+			<textarea id="info-speaker" class="form-control" placeholder="Speaker" rows='1'></textarea> <br>
+			<div>Description</div>
+			<textarea id="info-description" class="form-control" placeholder="Description"></textarea><br>
+			<div>Biography</div>
+			<textarea id="info-biography" class="form-control" placeholder="Biography"></textarea><br>
+		</div>
 
-	<div class="btn-wrapper">
-		<button id="btn-start-recog" class="btn">Start</button>
-		<button id="btn-stop-recog" class="btn">Stop</button>
+		<div id="result-container" style="display: none;">
+
+		</div>
+
+		<textarea id="transcription" style="display: none;" readonly="readonly"></textarea>
+
 	</div>
 </body>
 </html>
