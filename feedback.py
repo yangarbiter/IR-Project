@@ -52,9 +52,43 @@ class WebpageReader:
         return content;
 
 class DocumentBrowser:
-    def __init__(self, document):
-        self.documentWords = copy.deepcopy(document).strip().split();
+    def __init__(self, _content):
+        content = copy.deepcopy(_content);
+        content = self._removeHTMLTags(content);
+        content = self._transformLowerCase(content);
+        content = self._removePunctuation(content);
+
+        self.documentWords = content.strip().split();
         self.documentWordCount = len(self.documentWords);
+
+    def _removeHTMLTags(self, content):
+        newContent = "";
+
+        tagLayer = 0;
+        for character in content:
+            if character == "<":
+                tagLayer += 1;
+            
+            if tagLayer == 0:
+                newContent += character;
+            
+            if character == ">":
+                tagLayer -= 1;
+        
+        return newContent;
+
+    def _transformLowerCase(self, content):
+        return content.lower();
+
+    def _removePunctuation(self, content):
+        newContent = "";
+        punctuationDict = {p: True for p in string.punctuation};
+
+        for character in content:
+            if character not in punctuationDict:
+                newContent += character;
+
+        return newContent;
 
     def _getEditDistance(self, word1, word2):
         charCount1 = len(word1);
@@ -165,7 +199,7 @@ def main():
     feedbackDict = documentBrowser.gatherFeedbackWords(keyword);
     
     feedbackFile = open(feedbackFileName, "w");
-    for word in feedbackDict:
+    for (word, count) in sorted(feedbackDict.items(), key = lambda (k, v): (v, k), reverse = True):
         feedbackFile.write(str(word) + "\n");
     feedbackFile.close();
 
