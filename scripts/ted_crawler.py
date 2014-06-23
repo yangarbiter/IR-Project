@@ -1,10 +1,49 @@
 #!/bin/python3
 
 import httplib, json, time
+from bs4 import BeautifulSoup
+import codecs
 
 API_KEY=''
 
+def crawl_transcript():
+    conn = httplib.HTTPConnection("www.ted.com")
+    api_conn = httplib.HTTPConnection("api.ted.com")
+    for vid in range(673, 2007):
+        print vid
+        f = codecs.open('../../ir_project/transcript/'+str(vid)+'.trans', "w", encoding="utf8")
+        time.sleep(2)
+
+        api_conn.request("GET", "/v1/talks/" + str(vid) + ".json?api-key=" + API_KEY)
+        res = api_conn.getresponse()
+        if res.status == 404:
+            api_conn.close()
+            continue
+        res = res.read().decode('utf8', "ignore")
+        #res = res.read().encode('utf-8')
+        api_conn.close()
+        res = json.loads(res)
+        slug = res['talk']['slug']
+
+        time.sleep(2)
+
+        conn.request("GET", "/talks/"+slug+'/transcript')
+        res = conn.getresponse()
+        if res.status == 404:
+            api_conn.close()
+            continue
+        res = res.read().decode('utf8', "ignore")
+        conn.close()
+        soup = BeautifulSoup(res)
+        for i in soup.find_all("span", "talk-transcript__fragment"):
+            f.write(i.string)
+        f.close()
+
 def main():
+    crawl_transcript()
+
+
+def crawl_video_data():
     conn = httplib.HTTPConnection("api.ted.com")
     for vid in range(511,2007):
         print vid
