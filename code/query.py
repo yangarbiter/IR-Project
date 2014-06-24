@@ -116,6 +116,7 @@ class pygoogle:
                 if data.has_key('responseData') and data['responseData'].has_key('results'):
                     for result in  data['responseData']['results']:
                         if result:
+                            print self.query,
                             print '[%s]'%(urllib.unquote(result['titleNoFormatting']))
                             print result['content'].strip("<b>...</b>").replace("<b>",'').replace("</b>",'').replace("&#39;","'").replace("\n","").strip()
                             print urllib.unquote(result['unescapedUrl'])+'\n'
