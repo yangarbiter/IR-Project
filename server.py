@@ -2,12 +2,14 @@
 
 import tornado.ioloop, tornado.web, tornado.websocket
 import json
+import subprocess
 
 import google_query
 
 STATIC_PATH = './static'
 RESULT_PATH = './result'
 
+make_list_prog = ''
 
 def getResult():
     with open(RESULT_PATH, "r") as f:
@@ -25,8 +27,11 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         msgs = []
+        global make_list_prog
 
         print(message)
+        vocabs = make_list_prog.communicate(input=bytes(message, 'utf-8'))[0]
+        print(vocabs)
 
         ret = google_query.main()
 
@@ -41,7 +46,9 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         self.write_message(json.dumps(msgs))
 
     def on_close(self):
-        pass
+        global make_list_prog
+        make_list_prog.terminate()
+        #make_list_prog.returncode
         #print("websocket closed")
 
 class FeedbackHandler(BaseHandler):
@@ -53,12 +60,29 @@ class FeedbackHandler(BaseHandler):
 
 class InfoHandler(BaseHandler):
     def post(self):
-        speech_info = {}
-        speech_info['title'] = self.get_argument('title')
-        speech_info['speaker'] = self.get_argument('speaker')
-        speech_info['description'] = self.get_argument('description')
-        speech_info['biography'] = self.get_argument('biography')
+        POS_TAGGER_PATH = 'scripts/pos_tagger.py'
+        CORPUS_PATH = 'make_list/corpus'
+        STOPWORD_PATH = 'make_list/stopword'
+        INFO_PATH = 'make_list/speech_info'
+        PROG_PATH = 'make_list/make_list'
+        with open(INFO_PATH, 'w') as f:
+            speech_info = {}
+            speech_info['title'] = self.get_argument('title')
+            speech_info['speaker'] = self.get_argument('speaker')
+            speech_info['description'] = self.get_argument('description')
+            speech_info['biography'] = self.get_argument('biography')
+            f.write('title: ' + speech_info['title'])
+            f.write('speaker: ' + speech_info['speaker'])
+            f.write('description: ' + speech_info['description'])
+            f.write('biography: ' + speech_info['biography'])
         print(speech_info)
+
+        global make_list_prog
+        make_list_prog = subprocess.Popen(
+                        [PROG_PATH, POS_TAGGER_PATH, CORPUS_PATH, STOPWORD_PATH, INFO_PATH],
+                        stdin=subprocess.PIPE, stdout=subprocess.PIPE ) 
+        
+
 
 
 class MainHandler(BaseHandler):
