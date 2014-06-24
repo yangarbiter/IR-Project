@@ -27,6 +27,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
         msg = {}
         msg['title'] = 'Test'
+        msg['url'] = 'www.google.com'
         msg['content'] = 'ttt'
         msg['vocab'] = 'Apple'
         msgs.append(msg)

@@ -12,11 +12,12 @@ window.onload = function(){
 		var msg = JSON.parse(event.data);
 		for(i=0; i<msg.length; i++){
 			var entry = document.createElement('div');
-			var title = document.createElement('div');
+			var title = document.createElement('a');
 			var content = document.createElement('div');
 			var btn_del = document.createElement('button');
 			var btn_acc = document.createElement('button');
 
+			entry.id = 'entry'.concat(msg[i].vocab);
 			entry.className = 'entry';
 
 			btn_del.nodeType = "button";
@@ -25,7 +26,9 @@ window.onload = function(){
 			btn_del.appendChild(document.createElement('span'));
 			btn_del.firstChild.className = "glyphicon glyphicon-remove";
 			btn_del.addEventListener('click', function(){
-				$.post("fb", { type: 'remove', vocab: this.id.substr(7, this.id.length-7)});
+				var voc = this.id.substr(7, this.id.length-7);
+				$.post("fb", { type: 'remove', vocab: voc});
+				document.getElementById('entry'.concat(voc)).remove();
 			});
 
 			btn_acc.nodeType = "button";
@@ -39,6 +42,7 @@ window.onload = function(){
 
 			title.innerHTML = msg[i].title;
 			title.className = 'entry-title';
+			title.href = msg[i].url;
 
 			content.innerHTML = msg[i].content;
 			content.className = 'entry-content';

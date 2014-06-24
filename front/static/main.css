@@ -1,4 +1,33 @@
 .entry {
 	width: 33%;
+	height: 150px;
 	float: left;
+	margin-top: 20px;
+}
+
+.entry-title{
+	font-size: 28px;
+	margin-top: 15px;
+	margin-bottom: 10px;
+}
+
+.entry-content{
+	font-size: 16px;
+}
+
+.btn-acc{
+	float: right;
+	margin-top: 7px;
+	margin-right: 20px;
+}
+
+.btn-del{
+	float: right;
+	margin-top: 7px;
+	margin-right: 5px;
+}
+
+.btn-container{
+	margin-top: 15px;
+	margin-bottom: 20px;
 }
