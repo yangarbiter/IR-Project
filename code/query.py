@@ -117,7 +117,7 @@ class pygoogle:
                     for result in  data['responseData']['results']:
                         if result:
                             print '[%s]'%(urllib.unquote(result['titleNoFormatting']))
-                            print result['content'].strip("<b>...</b>").replace("<b>",'').replace("</b>",'').replace("&#39;","'").strip()
+                            print result['content'].strip("<b>...</b>").replace("<b>",'').replace("</b>",'').replace("&#39;","'").replace("\n","").strip()
                             print urllib.unquote(result['unescapedUrl'])+'\n'
                 else:
                     # no responseData key was found in 'data'
@@ -217,7 +217,6 @@ def main():
     parser.add_argument('query', nargs='*', default=None)
     args = parser.parse_args()
     log_level = logging.INFO
-
     with open('../terms.txt') as fin:
         for terms in fin:
             query = terms
