@@ -117,10 +117,12 @@ class pygoogle:
                             ret.append(result['content'].strip("<b>...</b>").replace("<b>",'').replace("</b>",'').replace("&#39;","'").replace("\n","").strip())
                             ret.append(urllib.parse.unquote(result['unescapedUrl']))
 
+                            """
                             print(self.query,)
                             print('[%s]'%(urllib.parse.unquote(result['titleNoFormatting'])))
                             print(result['content'].strip("<b>...</b>").replace("<b>",'').replace("</b>",'').replace("&#39;","'").replace("\n","").strip())
                             print(urllib.parse.unquote(result['unescapedUrl'])+'\n')
+                            """
                 else:
                     # no responseData key was found in 'data'
                     self.logger.error('no responseData key found in response. very unusal')

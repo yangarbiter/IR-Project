@@ -10,6 +10,7 @@ window.onload = function(){
 	};
 	ws.onmessage = function(event) {
 		var msg = JSON.parse(event.data);
+		$('#result-container').html = 0;
 		for(i=0; i<msg.length; i++){
 			var entry = document.createElement('div');
 			var title = document.createElement('a');
