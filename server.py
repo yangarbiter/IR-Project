@@ -3,6 +3,8 @@
 import tornado.ioloop, tornado.web, tornado.websocket
 import json
 
+import google_query
+
 STATIC_PATH = './static'
 RESULT_PATH = './result'
 
@@ -22,15 +24,19 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         #print('websocket open')
 
     def on_message(self, message):
-        print(message)
         msgs = []
 
-        msg = {}
-        msg['title'] = 'Test'
-        msg['url'] = 'www.google.com'
-        msg['content'] = 'ttt'
-        msg['vocab'] = 'Apple'
-        msgs.append(msg)
+        print(message)
+
+        ret = google_query.main()
+
+        for query in ret:
+            msg = {}
+            msg['title'] = query[1][1:-1]
+            msg['url'] = query[3]
+            msg['content'] = query[2]
+            msg['vocab'] = query[0][:-1]
+            msgs.append(msg)
 
         self.write_message(json.dumps(msgs))
 

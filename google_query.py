@@ -84,6 +84,7 @@ class pygoogle:
         returns list of results if successful or False otherwise
         '''
         results = []
+        ret = []
         for page in range(0,self.pages):
             rsz = 8
             if self.rsz == RSZ_SMALL:
@@ -111,6 +112,11 @@ class pygoogle:
                 if 'responseData' in data and 'results' in data['responseData']:
                     for result in  data['responseData']['results']:
                         if result:
+                            ret.append(self.query)
+                            ret.append('[%s]'%(urllib.parse.unquote(result['titleNoFormatting'])))
+                            ret.append(result['content'].strip("<b>...</b>").replace("<b>",'').replace("</b>",'').replace("&#39;","'").replace("\n","").strip())
+                            ret.append(urllib.parse.unquote(result['unescapedUrl']))
+
                             print(self.query,)
                             print('[%s]'%(urllib.parse.unquote(result['titleNoFormatting'])))
                             print(result['content'].strip("<b>...</b>").replace("<b>",'').replace("</b>",'').replace("&#39;","'").replace("\n","").strip())
@@ -119,7 +125,8 @@ class pygoogle:
                     # no responseData key was found in 'data'
                     self.logger.error('no responseData key found in response. very unusal')
             results.append(data)
-        return results
+        #return results, ret
+        return ret
 
     def search(self):
         """Returns a dict of Title/URLs"""
@@ -132,8 +139,8 @@ class pygoogle:
             if 'responseData' in data and 'results' in data['responseData']:
                 for result in data['responseData']['results']:
                     if result and 'titleNoFormatting' in result:
-                        title = urllib.unquote(result['titleNoFormatting'])
-                        results[title] = urllib.unquote(result['unescapedUrl'])
+                        title = urllib.parse.unquote(result['titleNoFormatting'])
+                        results[title] = urllib.parse.unquote(result['unescapedUrl'])
             else:
                 self.logger.error('no responseData key found in response')
                 self.logger.error(data)
@@ -213,6 +220,7 @@ def main():
     parser.add_argument('query', nargs='*', default=None)
     args = parser.parse_args()
     log_level = logging.INFO
+    ret = []
     with open('terms.txt') as fin:
         for terms in fin:
             query = terms
@@ -222,8 +230,8 @@ def main():
                 parser.print_help()
                 exit()
             search = pygoogle( log_level=log_level, query=query, pages=args.pages, hl=args.language)
-            search.display_results()
-            print(search.__search__())
+            ret.append(search.__search__(True))
+    return ret
 
 if __name__ == "__main__":
     main()
