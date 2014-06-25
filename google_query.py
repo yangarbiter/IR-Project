@@ -215,7 +215,7 @@ class pygoogle:
         """Prints results (for command line)"""
         self.__search__(True)
 
-def main():
+def main(vocabs):
     parser = argparse.ArgumentParser(description='A simple Google search module for Python')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Verbose mode')
     parser.add_argument('-p', '--pages', dest='pages', action='store', default=1, help='Number of pages to return. Max 10')
@@ -228,8 +228,8 @@ def main():
     #with open('terms.txt') as fin:
         #for terms in fin:
             #query = terms
-    for i in range(1,len(sys.argv)):
-        query = sys.argv[i]
+    for i in range(1,len(vocabs)):
+        query = vocabs[i]
         #print(query)
         if args.verbose:
             log_level = logging.DEBUG

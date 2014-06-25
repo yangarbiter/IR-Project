@@ -3,10 +3,10 @@ window.onload = function(){
 	var recognizer = new webkitSpeechRecognition();
 	var transcription = document.getElementById('transcription');
 	var result_container = document.getElementById('result-container');
-	var ws = new WebSocket("ws://localhost:8888/ws");
+	var ws = new WebSocket("ws://192.168.204.148:8888/ws");
 	
 	ws.onopen = function() {
-		//console.log("ws open");
+		console.log("ws open");
 	};
 	ws.onmessage = function(event) {
 		var msg = JSON.parse(event.data);
@@ -65,11 +65,13 @@ window.onload = function(){
 	recognizer.onresult = function(event) {
 		transcription.textContent = '';
 		for (var i = event.resultIndex; i < event.results.length; i++) {
-			console.log("Result: " + event.results[i][0].transcript)
 			if (event.results[i].isFinal) {
-				transcription.textContent = event.results[i][0].transcript + ' (Confidence: ' + event.results[i][0].confidence + ')';
+				console.log("Result: " + event.results[i][0].transcript)
+				//transcription.textContent = event.results[i][0].transcript + ' (Confidence: ' + event.results[i][0].confidence + ')';
+				transcription.textContent = event.results[i][0].transcript;
 				ws.send(transcription.textContent);
 			} else {
+				console.log(event.results[i][0].transcript)
 				transcription.textContent += event.results[i][0].transcript;
 			}
 		}

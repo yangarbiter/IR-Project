@@ -8,140 +8,190 @@
 #include <sys/wait.h>
 #include <math.h>
 #include "porter.c"
+#define STR_LENGTH 100
+#define BUF_SIZE 65536
+#define CORPUS_SIZE 150000
+#define DOC_NUM 550
 
 typedef struct
 {
-    char voc[100];
-    char o_voc[100];
-    double tf;
-    double df;
-    double prob;
-    int link;
+	char voc[STR_LENGTH];// the stemmed word
+	char o_voc[STR_LENGTH];//the word before stemming
+	double tf;//term frequency
+	double df;//document frequency 
+	double weight;//term weight
+	int link;//0: appear in the speech ; 1: appear in the related website
 }term_t;
 term_t *term;
 int now_term = 0, max_term = 100;
 
-char sentence[10000];
-char original_word[100];
-char corpus_list[150000][100];
-double corpus_df[150000];
+char sentence[BUF_SIZE];
+char original_word[STR_LENGTH];
+char corpus_list[CORPUS_SIZE][STR_LENGTH];
+double corpus_df[CORPUS_SIZE];
 int corpus_cnt = 0;
-char stopword_list[150000][100];
+char stopword_list[CORPUS_SIZE][STR_LENGTH];
 int stopword_cnt = 0;
 
-int cmp(const void *a, const void *b)
+int cmp(const void *a, const void *b)// use for sorting weights
 {
-    term_t *termA = (term_t*)a;
-    term_t *termB = (term_t*)b;
-    if(termA->prob >= termB->prob)
-        return 1;
-    else
-        return -1;
+	term_t *termA = (term_t*)a;
+	term_t *termB = (term_t*)b;
+	if(termA->weight > termB->weight)
+		return 1;
+	else
+		return -1;
 }
-double is_stopword(char *str)
+double is_stopword(char *str)//whether the word is a stopword
 {
-    int i;
-    for(i = 0 ; i < stopword_cnt ; i++)
-	if(strcmp(str , stopword_list[i]) == 0 )
-	    return 1;
-    return 0;
+	int i;
+	for(i = 0 ; i < stopword_cnt ; i++)
+		if(strcmp(str , stopword_list[i]) == 0 )
+			return 1;
+	return 0;
 }
-void parse_xml(char* str)
+void parse_html_tag(char* str)//parse <>, </>
 {
-    char *tmp;
-    int i, flag, tmplen = 0;
-    tmp = malloc(65536*sizeof(char));
-    for(i = 0; i < strlen(str); i++)
-    {
-	if(str[i] == '<')
-		flag = 1;
-        else if(str[i] == '>')
-		flag = 0;
-	if(flag == 0)	
-            tmp[tmplen++] = str[i];
-    }
-    strcpy(str, tmp);
-    free(tmp);
+	char *tmp;
+	int i, flag = 0, tmplen = 0;
+	tmp = malloc(BUF_SIZE*sizeof(char));
+	for(i = 0; i < strlen(str); i++)
+	{
+		if(str[i] == '<')
+			flag = 1;
+		else if(str[i] == '>')
+		{
+			flag = 0;
+			continue;
+		}
+		if(flag == 0)	
+			tmp[tmplen++] = str[i];
+	}
+	strcpy(str, tmp);
+	free(tmp);
 }
 double find_df(char *str)
 {
-    int i;
-    for(i = 0 ; i < corpus_cnt ; i++)
-        if(strcmp(str , corpus_list[i]) == 0 )
-            return corpus_df[i]+1;
-    return 1;
+	int i;
+	for(i = 0 ; i < corpus_cnt ; i++)
+		if(strcmp(str , corpus_list[i]) == 0 )
+			return corpus_df[i]+1;
+	return 1;
 }
-void to_sentence(char* str)
+void to_sentence(char* str)//remove all the non-letter char
 {
-    char *tmp;
-    int i, tmplen = 0;
-    tmp = malloc(65536*sizeof(char));
-    for(i = 0; i < strlen(str); i++)
-        if(LETTER(str[i]))
-            tmp[tmplen++] = str[i];
-        else
-	    tmp[tmplen++] = ' ';
-    tmp[tmplen] = '\0';
-    strcpy(str, tmp);
-    free(tmp);
+	char *tmp;
+	int i, tmplen = 0;
+	tmp = malloc(BUF_SIZE*sizeof(char));
+	for(i = 0; i < strlen(str); i++)
+		if(LETTER(str[i]))
+			tmp[tmplen++] = str[i];
+		else
+		tmp[tmplen++] = ' ';
+	tmp[tmplen] = '\0';
+	strcpy(str, tmp);
+	free(tmp);
 }
 
 int to_valid_word(char* str)
 {
-    //printf("%s\n", str);
-    char tmp[100], flag = 1;
-    int i, tmplen = 0;
-    for(i = 0; i < strlen(str); i++)
-    {
-            if(str[i]-'A' < 26 && str[i]-'A' >= 0)
-                str[i] = tolower(str[i]);
-            else
-                flag = 0;
-    }
+	char tmp[STR_LENGTH], flag = 1;
+	int i, tmplen = 0;
+	for(i = 0; i < strlen(str); i++)
+	{
+			if(str[i]-'A' < 26 && str[i]-'A' >= 0)
+				str[i] = tolower(str[i]);
+			else
+				flag = 0;
+	}
 
-    for(i = 0; i < strlen(str); i++)
-        if(LETTER(str[i]) || (str[i] == '-' && tmplen != 0))
-            tmp[tmplen++] = str[i];
-    tmp[tmplen] = '\0';
-    strcpy(str, tmp);
-    strcpy(original_word, tmp);
-    stemfile(str);
-    //printf("%s \n", s);
-    if(is_stopword(s))
-   // {
-	//printf("%s is stopword\n", s);
-	return 0;
-    //}
-    if(flag == 0 && strlen(s) <=4)
-        return 0;
-    return 1;
+	for(i = 0; i < strlen(str); i++)
+		if(LETTER(str[i]) || (str[i] == '-' && tmplen != 0))
+			tmp[tmplen++] = str[i];
+	tmp[tmplen] = '\0';
+	strcpy(str, tmp);
+	strcpy(original_word, tmp);
+	stemstring(str);
+	if(is_stopword(s))
+		return 0;//will not be concerned
+	if(flag == 0 && strlen(s) <=4)
+		return 0;//will not be concerned
+	return 1;
 
+}
+add_term(char* str, char* tagger, double tf_weight ,double idf_weight, double noun_weight, int link )
+{
+	int i;
+	for(i = 0; i < now_term ; i++)
+		if(strcmp(term[i].voc , str) == 0)
+			break;
+	if(i == now_term)
+	{
+		if(now_term >= max_term)
+		{
+			max_term *=2;
+			term = realloc(term , max_term*sizeof(term_t));
+		}
+		strcpy(term[i].voc, str);
+		strcpy(term[i].o_voc, original_word);
+		if(tagger[0] == 'N' && tagger[1] == 'N')
+		{
+				//if(tagger[2] == 'P')
+					//  term[i].weight = 0.3;
+				//else
+				term[i].weight =  noun_weight;
+		}
+		else
+			term[i].weight = 0.01;
+		now_term++;
+		term[i].tf = 1;
+		term[i].link = link;
+		term[i].df = find_df(str);
+		term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight);
+		}
+	else
+	{
+		term[i].tf++;
+		term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight * tf_weight) ;
+	}
 }
 
 int main(int argc, char * argv[])
 {
-    int i, num, j, k;
-    char str[100], new_str[100], tagger[30];
-    char *buf;
-    buf = malloc(65536*sizeof(char));
-    s = (char *) malloc(i_max+1);
-    double k1 = 0.01;
-
-    //generate pipes
-    int read_fd[2], write_fd[2];
-    FILE *read_fp, *write_fp;
-    if(pipe(write_fd) !=0 )
-    {
+	int i, j, k, num;
+	char str[STR_LENGTH], new_str[STR_LENGTH], tagger[STR_LENGTH];
+	char *buf;
+	buf = malloc(BUF_SIZE*sizeof(char));
+	s = (char *) malloc(i_max+1);
+	double filter = 0.23, k1 = 0.15, k2  = 0.02, k3 = 0.15;
+	//fprintf(stderr,"start init\n");
+	if(argc < 5)
+	{
+		fprintf(stderr,"argument number error\n");
+		return 1;
+	}
+	if(argc >= 9)
+	{
+		sscanf(argv[5], "%lf", &filter);
+		sscanf(argv[6], "%lf", &k1);
+		sscanf(argv[7], "%lf", &k2);
+		sscanf(argv[8], "%lf", &k3);
+	}
+	//generate pipes
+	int read_fd[2], write_fd[2];
+	FILE *read_fp, *write_fp;
+	if(pipe(write_fd) !=0 )
+	{
 			fprintf(stderr,"pipe(write_fd)  error\n");
 			return 1;
-    }
-    if(pipe(read_fd) !=0 )
-    {
-        fprintf(stderr,"pipe(read_fd)  error\n");
-        return 1;
-    }
-    if(fork() == 0)
-    {
+	}
+	if(pipe(read_fd) !=0 )
+	{
+		fprintf(stderr,"pipe(read_fd)  error\n");
+		return 1;
+	}
+	if(fork() == 0)
+	{
 			dup2(read_fd[1], STDOUT_FILENO);
 			dup2(write_fd[0], STDIN_FILENO);
 			close(read_fd[1]);
@@ -149,201 +199,138 @@ int main(int argc, char * argv[])
 			execl(argv[1],argv[1], (char*)0);
 			fprintf(stderr,"fork  error\n");
 			exit(127);
-    }
-    write_fp = fdopen(write_fd[1],"w");
-    if(write_fp == NULL)
-    {
-        fprintf(stderr,"fdopen write[1] error\n");
-        return 1;
-    }
-    read_fp= fdopen(read_fd[0],"r");
-    if(read_fp == NULL)
-    {
-        fprintf(stderr,"fdopen read_fd[0] error\n");
-        exit(0);
-    }
-
-
-    FILE* corpus_fp = fopen(argv[2], "r");
-    if(corpus_fp == NULL)
-    {
-        printf("cannot open the corpus");
-        return 1;
-    }
-
-    while(fscanf(corpus_fp, "%s %d", str, &num) != EOF)
-    {
-        strcpy(corpus_list[corpus_cnt], str);
-        corpus_df[corpus_cnt] = num;
-        corpus_cnt++;
-    }
-    fclose(corpus_fp);
-
-    FILE* stopword_fp = fopen(argv[3], "r");
-    if(stopword_fp == NULL)
-    {
-        printf("cannot open the stopword");
-        return 1;
-    }
-
-    while(fscanf(stopword_fp, "%s", str) != EOF)
-    {
-        strcpy(stopword_list[stopword_cnt], str);
-        stopword_cnt++;
-    }
-    fclose(stopword_fp);
-   // for(i = 0 ; i < stopword_cnt; i++)
-//	fprintf(stderr, "%s\n", stopword_list[i]);
-
-
-
-    term = malloc(100*sizeof(term_t));
-    //preprocess the background information
-    //scanf("%s", str);//the background information file name
-    FILE *fp = fopen(argv[4], "r");
-    if(fp == NULL)
-    {
-        printf("cannot open the file");
-        return 1;
-    }
-    for(j = 0; j < 3; j++)
-    {
-         if(j ==1)
-         {
-         	fgets(str, 100, fp);
-        	 for(i = 0 ; i < strlen(str) ; i++)
-			if(str[i] == ' ' && str[i-1] == ':')
-				break;
-		i++;
-         	for(k = 0 ; k+i < strlen(str); k++)
-			str[k] = str[i+k];
-                str[k-1] = '\0';
-                strcpy(term[0].voc,str);
-                strcpy(term[0].o_voc,str);
-                term[0].tf = 1;
-                term[0].link = 0;
-		term[0].prob = 0.3;
-                now_term++;
-		
-	 }
-         else
-	{
-         fgets(buf, 65536, fp);
-	 parse_xml(buf);
-	//printf("%s\n", buf);
-         while(sscanf(buf,"%s", str)!=EOF)
-         {
-            	buf+=strlen(str);
-                if(to_valid_word(str) == 0)
-                    continue;
-                //printf("%s is OK\n",s);
-
-                for(i = 0; i < now_term ; i++)
-                    if(strcmp(term[i].voc , s) == 0)
-                        break;
-                if(i == now_term)
-                {
-                    if(now_term >= max_term)
-                    {
-                        max_term *=2;
-                        term = realloc(term , max_term*sizeof(term_t));
-                    }
-                    strcpy(term[i].voc,s);
-                    strcpy(term[i].o_voc, original_word);
-                    if(tagger[0] == 'N' && tagger[1] == 'N')
-                    {
-			//if(tagger[2] == 'P')
-                          //  term[i].prob = 0.3;
-			//else
-                            term[i].prob = 0.15;
-                    }
-                    else
-                        term[i].prob = 0.01;
-                    now_term++;
-                    term[i].tf = 1;
-                    term[i].link = 0;
-                    term[i].df = find_df(s);
-                    //printf("df =%lf\n", term[i].df);
-                    term[i].prob+= (log(550/term[i].df)*k1);
-                }
-                //else
-                //{
-                  //  term[i].tf++;
-                    //term[i].prob+= (log(term[i].df)*k1);
-                // }
-                //if s isn't in the common word list
-   	 }   
 	}
-    }
+	write_fp = fdopen(write_fd[1],"w");
+	if(write_fp == NULL)
+	{
+		fprintf(stderr,"fdopen write[1] error\n");
+		return 1;
+	}
+	read_fp= fdopen(read_fd[0],"r");
+	if(read_fp == NULL)
+	{
+		fprintf(stderr,"fdopen read_fd[0] error\n");
+		exit(0);
+	}
+	//fprintf(stderr,"fork and exec ends\n");
 
-    fclose(fp);
-    
-    while(1)
-    {
-        fgets(buf, 65536, stdin);
-        {
-            //printf("string = %s", buf);
-            to_sentence(buf);
-            //printf("%s\n", buf);
-            fprintf(write_fp, "%s\n", buf);
-            fflush(write_fp);
-            fgets(buf, 65536, read_fp);
-	    //printf("string = %s", buf);
-            while(sscanf(buf,"%s %s", str, tagger)!=EOF)
-            {
-		//printf("str = %s\n", str);
-                buf+=(strlen(str)+strlen(tagger)+2);
-		//printf("len %d le %d \n", strlen(str), strlen(tagger));
-                if(to_valid_word(str) == 0)
-                    continue;
-                //printf("%s is OK\n",s);
+	FILE* corpus_fp = fopen(argv[2], "r");
+	if(corpus_fp == NULL)
+	{
+		printf("cannot open the corpus");
+		return 1;
+	}
 
-                for(i = 0; i < now_term ; i++)
-                    if(strcmp(term[i].voc , s) == 0)
-                        break;
-                if(i == now_term)
-                {
-                    if(now_term >= max_term)
-                    {
-                        max_term *=2;
-                        term = realloc(term , max_term*sizeof(term_t));
-                    }
-                    strcpy(term[i].voc,s);
-                    strcpy(term[i].o_voc, original_word);
-                    if(tagger[0] == 'N' && tagger[1] == 'N')
-                    {
-			//if(tagger[2] == 'P')
-                          //  term[i].prob = 0.3;
+	while(fscanf(corpus_fp, "%s %d", str, &num) != EOF)
+	{
+		strcpy(corpus_list[corpus_cnt], str);
+		corpus_df[corpus_cnt] = num;
+		corpus_cnt++;
+	}
+	fclose(corpus_fp);
+	//fprintf(stderr,"reading corpus ends\n");
+	
+	FILE* stopword_fp = fopen(argv[3], "r");
+	if(stopword_fp == NULL)
+	{
+		printf("cannot open the stopword");
+		return 1;
+	}
+
+	while(fscanf(stopword_fp, "%s", str) != EOF)
+	{
+		strcpy(stopword_list[stopword_cnt], str);
+		stopword_cnt++;
+	}
+	fclose(stopword_fp);
+	//fprintf(stderr,"reading stopowrd_list ends\n");
+
+	term = malloc(STR_LENGTH*sizeof(term_t));
+	
+	//preprocess the background information
+	
+	FILE *fp = fopen(argv[4], "r");	
+	if(fp == NULL)
+	{
+		printf("cannot open the file");
+		return 1;
+	}
+	for(j = 0; j < 4; j++)
+	{
+			// if(j ==1)
+			// {
+			//	fgets(str, STR_LENGTH, fp);
+			//	 for(i = 0 ; i < strlen(str) ; i++)
+			//	if(str[i] == ' ' && str[i-1] == ':')
+			//		break;
+			//	i++;
+		//		for(k = 0 ; k+i < strlen(str); k++)
+			//	str[k] = str[i+k];
+			//		str[k-1] = '\0';
+			//		strcpy(term[0].voc,str);
+			//		strcpy(term[0].o_voc,str);
+			//		term[0].tf = 1;
+			//		term[0].link = 0;
+			//		term[0].weight = 0.3;
+			//		now_term++;
+		//	}
 			//else
-                            term[i].prob = 0.15;
-                    }
-                    else
-                        term[i].prob = 0.01;
-                    now_term++;
-                    term[i].tf = 1;
-                    term[i].link = 0;
-                    term[i].df = find_df(s);
-                    //printf("df =%lf\n", term[i].df);
-                    term[i].prob+= (log(550/term[i].df)*k1);
-                }
-                //else
-                //{
-                  //  term[i].tf++;
-                    //term[i].prob+= (log(term[i].df)*k1);
-                // }
-                //if s isn't in the common word list
-            }
+			//{
+		
+		fgets(buf, BUF_SIZE, fp);
+		parse_html_tag(buf);
+		fprintf(write_fp, "%s", buf);
+		fflush(write_fp);
+		fgets(buf, BUF_SIZE, read_fp);
+		while(sscanf(buf,"%s %s", str, tagger)!=EOF)
+		{
+			buf+=(strlen(str)+strlen(tagger)+2);
+			if(to_valid_word(str) == 0)
+				continue;
+			//fprintf(stderr,"add %s\n", s);
+			add_term(s, tagger, k1, k2, k3, 0);
+		} 	
+		//}
+	}
+	fclose(fp);
+	qsort(term, now_term, sizeof(term_t), cmp);
+	for(i = now_term-1; i>=0 && term[i].weight >= 0 ; i--){
+			  printf("%s\n", term[i].o_voc);
+			  //fprintf(stderr, "%s %lf\n", term[i].o_voc, term[i].weight);
+	}
+	//fprintf(stderr, "XD\n");
+	//printf("***************HHHH***********\n"); 
+	printf("\n");;
+	fflush(stdout);
+	
+	while(1)
+	{
+		fgets(buf, BUF_SIZE, stdin);
+		fprintf(stderr,"gets = %s", buf);
+		to_sentence(buf);
+		fprintf(write_fp, "%s\n", buf);
+		fflush(write_fp);
+		fgets(buf, BUF_SIZE, read_fp);
+		while(sscanf(buf,"%s %s", str, tagger)!=EOF)
+		{
+			buf+=(strlen(str)+strlen(tagger)+2);
+			if(to_valid_word(str) == 0)
+				continue;
+			add_term(s, tagger, k1, k2, k3, 0);
+		}
 
-            qsort(term, now_term, sizeof(term_t), cmp);
-            for(i = now_term-1; i>=0 && term[i].prob >=0.2 ; i--)
-               printf("%s\n", term[i].o_voc);
-	    //printf("****************an iteraion ends*******************\n"); 
-        }
-    }
+		qsort(term, now_term, sizeof(term_t), cmp);
+		for(i = now_term-1; i>=0 && term[i].weight >= filter ; i--)
+			  printf("%s\n", term[i].o_voc);
+			//printf("%s %lf\n", term[i].o_voc, term[i].weight);
+		//printf("***************HHHH***********\n"); 
+		printf("\n");
+		fflush(stdout);
+	}
 
-    free(s);
-    free(term);
-    free(buf);
+	free(s);
+	free(term);
+	free(buf);
 
-    return 0;
+	return 0;
 }

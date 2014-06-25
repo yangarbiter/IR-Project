@@ -10,6 +10,7 @@ STATIC_PATH = './static'
 RESULT_PATH = './result'
 
 make_list_prog = ''
+first = True
 
 def getResult():
     with open(RESULT_PATH, "r") as f:
@@ -22,18 +23,43 @@ class BaseHandler(tornado.web.RequestHandler):
 
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def open(self):
-        pass
-        #print('websocket open')
-
+        print('websocket open')
+        
     def on_message(self, message):
-        msgs = []
         global make_list_prog
+        global first
+
+        if first:
+            vocabs = self.get_vocabs()
+            self.send_result(vocabs)
+            first = False
 
         print(message)
-        vocabs = make_list_prog.communicate(input=bytes(message, 'utf-8'))[0]
+        make_list_prog.stdin.write(bytes(message+'\n', 'utf-8'))
+        make_list_prog.stdin.flush()
+        vocabs = self.get_vocabs()
         print(vocabs)
+        self.send_result(vocabs)
 
-        ret = google_query.main()
+    def on_close(self):
+        global make_list_prog
+        make_list_prog.terminate()
+        #make_list_prog.returncode
+        print("websocket closed")
+
+    def get_vocabs(self):
+        vocabs = []
+        for line in iter(make_list_prog.stdout.readline, b''):
+            print(line)
+            print(line.decode() == '\n')
+            if line.decode() == '\n':
+                break
+            vocabs.append(line.decode()[:-1])
+        return vocabs
+
+    def send_result(self, vocabs):
+        msgs = []
+        ret = google_query.main(vocabs)
 
         for query in ret:
             msg = {}
@@ -45,11 +71,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
         self.write_message(json.dumps(msgs))
 
-    def on_close(self):
-        global make_list_prog
-        make_list_prog.terminate()
-        #make_list_prog.returncode
-        #print("websocket closed")
+
 
 class FeedbackHandler(BaseHandler):
     def post(self):
@@ -71,18 +93,17 @@ class InfoHandler(BaseHandler):
             speech_info['speaker'] = self.get_argument('speaker')
             speech_info['description'] = self.get_argument('description')
             speech_info['biography'] = self.get_argument('biography')
-            f.write('title: ' + speech_info['title'])
-            f.write('speaker: ' + speech_info['speaker'])
-            f.write('description: ' + speech_info['description'])
-            f.write('biography: ' + speech_info['biography'])
+            f.write(speech_info['title'] + '\n')
+            f.write(speech_info['speaker'] + '\n')
+            f.write(speech_info['description'] + '\n')
+            f.write(speech_info['biography'] + '\n')
+            f.write('\n')
         print(speech_info)
 
         global make_list_prog
         make_list_prog = subprocess.Popen(
                         [PROG_PATH, POS_TAGGER_PATH, CORPUS_PATH, STOPWORD_PATH, INFO_PATH],
-                        stdin=subprocess.PIPE, stdout=subprocess.PIPE ) 
-        
-
+                           stdin=subprocess.PIPE, stdout=subprocess.PIPE ) 
 
 
 class MainHandler(BaseHandler):

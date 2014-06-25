@@ -332,7 +332,7 @@ void increase_s()
 #define LETTER(ch) (UC(ch) || LC(ch))
 #define FORCELC(ch) (ch-('A'-'a'))
 
-void stemfile(char * f)
+void stemstring(char * f)
 {
     int offset = 0;
     while(TRUE)
