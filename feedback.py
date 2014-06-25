@@ -2,8 +2,8 @@ import sys;
 import os;
 import codecs;
 import string;
-import httplib;
 import copy;
+import http.client;
 
 class RetrievalFileReader:
     def __init__(self, fileName):
@@ -11,7 +11,7 @@ class RetrievalFileReader:
         self._readKeywordURLPairs();
 
     def _readKeywordURLPairs(self):
-        inFile = open(fileName, "r");
+        inFile = open(self.fileName, "r");
 
         self.keywordURLs = [];
         itemIndex = 0;
@@ -78,22 +78,31 @@ class WebpageReader:
         #print(self.resourcePath);
 
     def readContent(self):
-        connection = httplib.HTTPConnection(self.domainName, self.portNumber);
+        connection = http.client.HTTPConnection(self.domainName, self.portNumber);
         connection.request("GET", self.resourcePath);
-        content = connection.getresponse().read();
+        content = connection.getresponse().read(); # the variable "content" is of type "byte"
         connection.close();
 
-        return content;
+        return str(content); # returns "content" of type "str"
 
 class DocumentBrowser:
-    def __init__(self, _content):
+    def __init__(self, _content, _previousWordCount = 20, _nextWordCount = 20, _distanceThreshold = 3):
+
         content = copy.deepcopy(_content);
         content = self._removeHTMLTags(content);
-        content = self._transformLowerCase(content);
         content = self._removePunctuation(content);
+        
+        self.contentWords = content.strip().split();
+
+        content = self._transformLowerCase(content);
 
         self.documentWords = content.strip().split();
         self.documentWordCount = len(self.documentWords);
+
+        self.wordPrimitiveDict = {word: self.contentWords[n] for (n, word) in enumerate(self.documentWords)}; # keeps primitive forms of words
+        self.previousWordCount = _previousWordCount;
+        self.nextWordCount = _nextWordCount;
+        self.distanceThreshold = _distanceThreshold;
 
     def _removeHTMLTags(self, content):
         newContent = "";
@@ -108,6 +117,7 @@ class DocumentBrowser:
             
             if character == ">":
                 tagLayer -= 1;
+                newContent += " "; # HTML tags is replaced with " "
         
         return newContent;
 
@@ -128,53 +138,55 @@ class DocumentBrowser:
         charCount1 = len(word1);
         charCount2 = len(word2);
 
-        editTable = [[0 for j in xrange(charCount2)] for i in xrange(charCount1)];
+        editTable = [[0 for j in range(charCount1 + 1)] for i in range(charCount2 + 1)];
 
-        for i in xrange(1, charCount1):
-            difference = 0 if word2[0] == word1[i] else 1;
-            editTable[i][0] = difference + editTable[i - 1][0];
+        for i in range(1, charCount2 + 1):
+            editTable[i][0] = editTable[i - 1][0] + 1;
 
-        for j in xrange(1, charCount2):
-            difference = 0 if word1[0] == word2[j] else 1;
-            editTable[0][j] = difference + editTable[0][j - 1];
+        for j in range(1, charCount1 + 1):
+            editTable[0][j] = editTable[0][j - 1] + 1;
 
-        for i in xrange(1, charCount1):
-            char1 = word1[i];
+        for i in range(1, charCount2 + 1):
+            char2 = word2[i - 1];
 
-            for j in xrange(1, charCount2):
-                char2 = word2[j];
-                difference = 0 if char1 == char2 else 1;
+            for j in range(1, charCount1 + 1):
+                char1 = word1[j - 1];
 
-                minDistance = editTable[i - 1][j - 1];
-                minDistance = editTable[i - 1][j] if minDistance > editTable[i - 1][j] else minDistance;
-                minDistance = editTable[i][j - 1] if minDistance > editTable[i][j - 1] else minDistance;
+                if char1 == char2:
+                    editTable[i][j] = editTable[i - 1][j - 1];
+                else:
+                    editTable[i][j] = min([editTable[i - 1][j - 1] + 1, editTable[i - 1][j] + 1, editTable[i][j - 1] + 1]);
 
-                editTable[i][j] = difference + minDistance;
+        return editTable[charCount2][charCount1];
 
-        return editTable[charCount1 - 1][charCount2 - 1];
-
-    def _isSameWord(self, word1, word2, distanceThreshold):
+    def _isSameWord(self, word1, word2):
         editDistance = self._getEditDistance(word1, word2);
-        return editDistance <= distanceThreshold;
+        isSame = (editDistance <= self.distanceThreshold);
+        if isSame:
+            print("\tFound word: ", word1);
+        return isSame;
 
-    def _findKeywords(self, keywords, distanceThreshold = 3):
+    def _findKeywords(self, keywords):
+        for (i, keyword) in enumerate(keywords):
+            newKeyword = self._removeHTMLTags(keyword);
+            newKeyword = self._transformLowerCase(newKeyword);
+            newKeyword = self._removePunctuation(newKeyword);
+            keywords[i] = newKeyword;
+
         keywordIndices = [];
         keywordCount = len(keywords);
 
-        print("Word count in document:", self.documentWordCount);
-
         w = 0;
         while w < self.documentWordCount - keywordCount + 1:
-            print "\t", w;
             wellMatched = True;
 
-            for t in xrange(keywordCount):
+            for t in range(keywordCount):
                 documentWord = self.documentWords[w + t];
                 keyword = keywords[t];
-                if not self._isSameWord(documentWord, keyword, distanceThreshold):
+                if not self._isSameWord(documentWord, keyword):
                     wellMatched = False;
                     break;
-                
+
             if wellMatched:
                 keywordIndices.append(w);
                 w += keywordCount;
@@ -186,18 +198,18 @@ class DocumentBrowser:
     def _fetchParagraph(self, firstIndex, lastIndex):
         return self.documentWords[firstIndex : lastIndex + 1];
 
-    def _getKeywordParagraphs(self, keyword, previousWordCount = 20, nextWordCount = 20):
+    def _getKeywordParagraphs(self, keyword):
         paragraphs = [];
         subKeywords = keyword.strip().split();
         subKeywordCount = len(subKeywords);
         keywordIndices = self._findKeywords(subKeywords);
 
         for keywordIndex in keywordIndices:
-            paragraphFirstIndex = keywordIndex - previousWordCount;
+            paragraphFirstIndex = keywordIndex - self.previousWordCount;
             if paragraphFirstIndex < 0:
                 paragraphFirstIndex = 0;
 
-            paragraphLastIndex = keywordIndex + subKeywordCount + nextWordCount;
+            paragraphLastIndex = keywordIndex + subKeywordCount + self.nextWordCount;
             if paragraphLastIndex >= self.documentWordCount:
                 paragraphLastIndex = self.documentWordCount - 1;
 
@@ -212,16 +224,30 @@ class DocumentBrowser:
         feedbackDict = {};
         for paragraph in paragraphs:
             for word in paragraph:
-                if word in feedbackDict:
-                    feedbackDict[word] += 1;
+                wordPrimitive = self.wordPrimitiveDict[word];
+                if wordPrimitive in feedbackDict:
+                    feedbackDict[wordPrimitive] += 1;
                 else:
-                    feedbackDict[word] = 1;
+                    feedbackDict[wordPrimitive] = 1;
 
         return feedbackDict;
 
+"""
+    usage: python3 feedback.py [input_query_file_path] [output_feedback_file_path] [previous_word_count] [next_word_count] [distance_threshold]
+"""
 def main():
     retrievalFileName = sys.argv[1];
     feedbackFileName = sys.argv[2];
+
+    previousWordCount = 20;
+    nextWordCount = 20;
+    if len(sys.argv) >= 5:
+        previousWordCount = int(sys.argv[3]);
+        nextWordCount = int(sys.argv[4]);
+
+    distanceThreshold = 3;
+    if len(sys.argv) >= 6:
+        distanceThreshold = int(sys.argv[5]);
 
     retrievalFileReader = RetrievalFileReader(retrievalFileName);
     keywordURLs = retrievalFileReader.getKeywordURLPairs();
@@ -233,11 +259,13 @@ def main():
         webpageReader = WebpageReader(URL);
         content = webpageReader.readContent();
 
-        print("Execute feedback of the keyword " + str(keyword));
-        documentBrowser = DocumentBrowser(content);
+        print("Content type: ", type(content));
+
+        print("Execute feedback of the keyword \"" + str(keyword) + "\"");
+        documentBrowser = DocumentBrowser(content, previousWordCount, nextWordCount, distanceThreshold);
         feedbackDict = documentBrowser.gatherFeedbackWords(keyword);
         
-        for (word, count) in sorted(feedbackDict.items(), key = lambda (k, v): (v, k), reverse = True):
+        for (word, count) in sorted(feedbackDict.items(), key = lambda kv: (kv[1], kv[0]), reverse = True):
             feedbackFile.write(str(word) + "\n");
     
     feedbackFile.close();
