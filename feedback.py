@@ -5,6 +5,40 @@ import string;
 import httplib;
 import copy;
 
+class RetrievalFileReader:
+    def __init__(self, fileName):
+        self.fileName = fileName;
+        self._readKeywordURLPairs();
+
+    def _readKeywordURLPairs(self):
+        inFile = open(fileName, "r");
+
+        self.keywordURLs = [];
+        itemIndex = 0;
+        keyword = "";
+        URL = "";
+        for line in inFile:
+            row = line.strip();
+            if len(row) == 0:
+                itemIndex = 0;
+                continue;
+            if itemIndex == 4:
+                itemIndex = 0;
+
+            if itemIndex == 0:
+                keyword = row;
+
+            if itemIndex == 3:
+                URL = row;
+                self.keywordURLs.append((keyword, URL));
+            
+            itemIndex += 1;    
+
+        inFile.close();
+
+    def getKeywordURLPairs(self):
+        return self.keywordURLs;
+
 class WebpageReader:
     def __init__(self, webpageURL):
         self.webpageURL = copy.deepcopy(webpageURL);
@@ -186,21 +220,26 @@ class DocumentBrowser:
         return feedbackDict;
 
 def main():
-    webpageURL = sys.argv[1];
-    keyword = sys.argv[2];
-    feedbackFileName = sys.argv[3];
+    retrievalFileName = sys.argv[1];
+    feedbackFileName = sys.argv[2];
 
-    print("Read webpage");
-    webpageReader = WebpageReader(webpageURL);
-    content = webpageReader.readContent();
-
-    print("Execute feedback")
-    documentBrowser = DocumentBrowser(content);
-    feedbackDict = documentBrowser.gatherFeedbackWords(keyword);
+    retrievalFileReader = RetrievalFileReader(retrievalFileName);
+    keywordURLs = retrievalFileReader.getKeywordURLPairs();
     
     feedbackFile = open(feedbackFileName, "w");
-    for (word, count) in sorted(feedbackDict.items(), key = lambda (k, v): (v, k), reverse = True):
-        feedbackFile.write(str(word) + "\n");
+    
+    for (keyword, URL) in keywordURLs:
+        print("Read webpage " + str(URL));
+        webpageReader = WebpageReader(URL);
+        content = webpageReader.readContent();
+
+        print("Execute feedback of the keyword " + str(keyword));
+        documentBrowser = DocumentBrowser(content);
+        feedbackDict = documentBrowser.gatherFeedbackWords(keyword);
+        
+        for (word, count) in sorted(feedbackDict.items(), key = lambda (k, v): (v, k), reverse = True):
+            feedbackFile.write(str(word) + "\n");
+    
     feedbackFile.close();
 
 if __name__ == "__main__":
