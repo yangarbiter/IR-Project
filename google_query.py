@@ -223,16 +223,20 @@ def main():
     args = parser.parse_args()
     log_level = logging.INFO
     ret = []
-    with open('terms.txt') as fin:
-        for terms in fin:
-            query = terms
-            if args.verbose:
-                log_level = logging.DEBUG
-            if not query:
-                parser.print_help()
-                exit()
-            search = pygoogle( log_level=log_level, query=query, pages=args.pages, hl=args.language)
-            ret.append(search.__search__(True))
+
+    #with open('terms.txt') as fin:
+        #for terms in fin:
+            #query = terms
+    for i in range(1,len(sys.argv)):
+        query = sys.argv[i]
+        #print(query)
+        if args.verbose:
+            log_level = logging.DEBUG
+        if not query:
+            parser.print_help()
+            exit()
+        search = pygoogle( log_level=log_level, query=query, pages=args.pages, hl=args.language)
+        ret.append(search.__search__(True))
     return ret
 
 if __name__ == "__main__":
