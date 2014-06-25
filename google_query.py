@@ -12,6 +12,7 @@ import urllib.parse
 import urllib.request
 import logging
 import argparse
+import time
 
 __author__ = "Kiran Bandla"
 __version__ = "0.2"
@@ -237,6 +238,8 @@ def main():
             exit()
         search = pygoogle( log_level=log_level, query=query, pages=args.pages, hl=args.language)
         ret.append(search.__search__(True))
+        time.sleep(0.5)
+        #print(i)
     return ret
 
 if __name__ == "__main__":
