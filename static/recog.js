@@ -27,7 +27,7 @@ window.onload = function(){
 			btn_del.appendChild(document.createElement('span'));
 			btn_del.firstChild.className = "glyphicon glyphicon-remove";
 			btn_del.addEventListener('click', function(){
-				var voc = this.id.substr(7, this.id.length-6);
+				var voc = this.id.substr(7, this.id.length-7);
 				$.post("fb", { type: 'remove', vocab: voc});
 				document.getElementById('entry'.concat(voc)).remove();
 			});
@@ -38,7 +38,7 @@ window.onload = function(){
 			btn_acc.appendChild(document.createElement('span'));
 			btn_acc.firstChild.className = "glyphicon glyphicon-ok";
 			btn_acc.addEventListener('click', function(){
-				$.post("fb", { type: 'accept', vocab: this.id.substr(7, this.id.length-6)});
+				$.post("fb", { type: 'accept', vocab: this.id.substr(7, this.id.length-7)});
 			});
 
 			title.innerHTML = msg[i].title;

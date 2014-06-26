@@ -5,6 +5,7 @@ import json
 import subprocess
 
 import google_query
+import feedback
 
 STATIC_PATH = './static'
 RESULT_PATH = './result'
@@ -55,18 +56,29 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         return vocabs
 
     def send_result(self, vocabs):
+        global make_list_prog
         msgs = []
-        ret = google_query.main(vocabs)
+        term_url_pair = []
+        queries = google_query.main(vocabs)
         print("query done")
 
-        for query in ret:
+        for i in range(len(queries)):
             msg = {}
-            msg['title'] = query[1][1:-1]
-            msg['url'] = query[3]
-            msg['content'] = query[2]
-            msg['vocab'] = query[0][:-1]
+            msg['title'] = queries[i][1][1:-1]
+            msg['url'] = queries[i][3]
+            msg['content'] = queries[i][2]
+            msg['vocab'] = queries[i][0]
             msgs.append(msg)
+            
+            term_url_pair.append((vocabs[i], msg['url']))
 
+        output = ""
+        ret = feedback.getFeedbackTerms(term_url_pair)
+        for p in ret:
+            output += p[0] + ' '
+            output += p[1] + ' '
+        print(output)
+        make_list_prog.stdin.write(bytes(output, 'utf-8'))
         self.write_message(json.dumps(msgs))
 
 
@@ -74,7 +86,6 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 class FeedbackHandler(BaseHandler):
     def post(self):
         global make_list_prog
-
         try:
             fb_type = self.get_argument('type')  # accept or remove
             vocab = self.get_argument('vocab')  
@@ -110,7 +121,7 @@ class InfoHandler(BaseHandler):
             f.write(speech_info['description'] + '\n')
             f.write(speech_info['biography'] + '\n')
             f.write('\n')
-        #print(speech_info)
+        print(speech_info)
 
         global make_list_prog
         make_list_prog = subprocess.Popen(
