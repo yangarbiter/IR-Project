@@ -9,7 +9,7 @@
 #include <math.h>
 #include "porter.c"
 #define STR_LENGTH 100
-#define BUF_SIZE 65536
+#define BUF_SIZE 150000
 #define CORPUS_SIZE 150000
 #define DOC_NUM 550
 
@@ -165,7 +165,7 @@ add_term(char* str, char* tagger, double tf_weight ,double idf_weight, double no
 int main(int argc, char * argv[])
 {
 	int i, j, k, num;
-	char str[STR_LENGTH], new_str[STR_LENGTH], tagger[STR_LENGTH];
+	char str[STR_LENGTH], new_str[STR_LENGTH], str2[STR_LENGTH], tagger[STR_LENGTH];
 	char *buf;
 	buf = malloc(BUF_SIZE*sizeof(char));
 	s = (char *) malloc(i_max+1);
@@ -302,7 +302,7 @@ int main(int argc, char * argv[])
 			if(to_valid_word(str) == 0)
 				continue;
 			
-			add_term(s, tagger, k1, k2, k3, 1);
+			add_term(s, tagger, k1, k2, k3, 0);
 		} 	
 		//}
 	}
@@ -311,14 +311,15 @@ int main(int argc, char * argv[])
 	for(i = now_term-1; i>=0 && term[i].weight >= filter ; i--)
 			  printf("%s\n", term[i].o_voc);
 			//printf("%s %lf\n", term[i].o_voc, term[i].weight);
-		//printf("***************HHHH***********\n"); 
+	//	printf("***************HHHH***********\n"); 
 	printf("\n");
 	fflush(stdout);
 	
 	while(1)
-	{
+	{	
+		//printf("gigi");
 		fgets(buf, BUF_SIZE, stdin);
-		//fprintf(stderr,"gets = %s", buf);
+		fprintf(stderr,"form stdin get = %s", buf);
 		if(buf[0] == '&')
 		{
 			for(i = 0 ; i < strlen(buf); i++)
@@ -329,31 +330,41 @@ int main(int argc, char * argv[])
 			for(i = 0; i < now_term ; i++)
 				if(strcmp(term[i].voc , s) == 0)
 					break;
-			fprintf( stderr,"%s %s\n",s, new_str);
+			//fprintf( stderr,"%s %s\n",s, new_str);
 			if(i  < now_term)
 			{
 				//fprintf(stderr, "%s\n", s);
 				if(new_str[0] == 'F')
 					term[i].weight = k4;
-				fprintf(stderr, "weight decreases to %lf\n", term[i].weight);
+				//fprintf(stderr, "weight decreases to %lf\n", term[i].weight);
 			}
 		}
 		else if(buf[0] == '*')
 		{
-			
+			fprintf(stderr, "recive feedback\n");
 			for(i = 0; i <= strlen(buf); i++)
 				buf[i] = buf[i+1];
 			to_sentence(buf);
 			fprintf(write_fp, "%s\n", buf);
 			fflush(write_fp);
 			fgets(buf, BUF_SIZE, read_fp);
-			while(sscanf(buf,"%s %s", str, tagger)!=EOF)
+			while(sscanf(buf,"%s %s %s %s", str, tagger, str2, new_str)!=EOF)
 			{
-				buf+=(strlen(str)+strlen(tagger)+2);
+				fprintf(stderr, "%s is from %s\n", str, str2);
+				buf+=(strlen(str)+strlen(tagger)+strlen(str2)+strlen(new_str)+4);
+				if(to_valid_word(str2) == 0)
+					continue;
+				strcpy(str2, s);
 				if(to_valid_word(str) == 0)
 					continue;
-				//fprintf(stderr,"add %s\n", s);
-				add_term(s, tagger, k1, k2, k3, 1);
+				for(i = 0; i < now_term ; i++)
+					if(strcmp(term[i].voc , str2) == 0)
+						break;
+				if(i  < now_term && term[i].weight >= filter)
+				{
+					fprintf(stderr, "add %s\n" , s);
+					add_term(s, tagger, k1, k2, k3, 1);
+				}
 			}
 		}
 		else
