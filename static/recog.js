@@ -3,14 +3,14 @@ window.onload = function(){
 	var recognizer = new webkitSpeechRecognition();
 	var transcription = document.getElementById('transcription');
 	var result_container = document.getElementById('result-container');
-	var ws = new WebSocket("ws://192.168.204.148:8888/ws");
+	var ws = new WebSocket("ws://"+location.host+"/ws");
 	
 	ws.onopen = function() {
 		console.log("ws open");
 	};
 	ws.onmessage = function(event) {
 		var msg = JSON.parse(event.data);
-		$('#result-container').html = 0;
+		$('#result-container').html('');
 		for(i=0; i<msg.length; i++){
 			var entry = document.createElement('div');
 			var title = document.createElement('a');
@@ -27,7 +27,7 @@ window.onload = function(){
 			btn_del.appendChild(document.createElement('span'));
 			btn_del.firstChild.className = "glyphicon glyphicon-remove";
 			btn_del.addEventListener('click', function(){
-				var voc = this.id.substr(7, this.id.length-7);
+				var voc = this.id.substr(7, this.id.length-6);
 				$.post("fb", { type: 'remove', vocab: voc});
 				document.getElementById('entry'.concat(voc)).remove();
 			});
@@ -38,7 +38,7 @@ window.onload = function(){
 			btn_acc.appendChild(document.createElement('span'));
 			btn_acc.firstChild.className = "glyphicon glyphicon-ok";
 			btn_acc.addEventListener('click', function(){
-				$.post("fb", { type: 'accept', vocab: this.id.substr(7, this.id.length-7)});
+				$.post("fb", { type: 'accept', vocab: this.id.substr(7, this.id.length-6)});
 			});
 
 			title.innerHTML = msg[i].title;

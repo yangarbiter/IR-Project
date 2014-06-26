@@ -31,7 +31,6 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
         if first:
             vocabs = self.get_vocabs()
-            self.send_result(vocabs)
             first = False
 
         print(message)
@@ -50,8 +49,6 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def get_vocabs(self):
         vocabs = []
         for line in iter(make_list_prog.stdout.readline, b''):
-            print(line)
-            print(line.decode() == '\n')
             if line.decode() == '\n':
                 break
             vocabs.append(line.decode()[:-1])
@@ -60,6 +57,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def send_result(self, vocabs):
         msgs = []
         ret = google_query.main(vocabs)
+        print("query done")
 
         for query in ret:
             msg = {}
@@ -75,9 +73,23 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
 class FeedbackHandler(BaseHandler):
     def post(self):
-        fb_type = self.get_argument('type')  # accept or remove
-        vocab = self.get_argument('vocab')  
-        print(fb_type, vocab)
+        global make_list_prog
+
+        try:
+            fb_type = self.get_argument('type')  # accept or remove
+            vocab = self.get_argument('vocab')  
+            print(fb_type, vocab)
+
+            if fb_type == 'accept':
+                output = '&' + vocab + ' True\n'
+            else:
+                output = '&' + vocab + ' False\n'
+
+            make_list_prog.stdin.write(bytes(output, 'utf-8'))
+            make_list_prog.stdin.flush()
+            self.write({"success":True})
+        except:
+            self.write({"success":False})
 
 
 class InfoHandler(BaseHandler):
@@ -98,7 +110,7 @@ class InfoHandler(BaseHandler):
             f.write(speech_info['description'] + '\n')
             f.write(speech_info['biography'] + '\n')
             f.write('\n')
-        print(speech_info)
+        #print(speech_info)
 
         global make_list_prog
         make_list_prog = subprocess.Popen(

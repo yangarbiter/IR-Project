@@ -228,7 +228,7 @@ def main(vocabs):
     #with open('terms.txt') as fin:
         #for terms in fin:
             #query = terms
-    for i in range(1,len(vocabs)):
+    for i in range(len(vocabs)):
         query = vocabs[i]
         #print(query)
         if args.verbose:
@@ -238,7 +238,7 @@ def main(vocabs):
             exit()
         search = pygoogle( log_level=log_level, query=query, pages=args.pages, hl=args.language)
         ret.append(search.__search__(True))
-        time.sleep(0.5)
+        time.sleep(1)
         #print(i)
     return ret
 

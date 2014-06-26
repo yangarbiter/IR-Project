@@ -249,6 +249,9 @@ def main():
     if len(sys.argv) >= 6:
         distanceThreshold = int(sys.argv[5]);
 
+    #[ (term, url), (term, url) ]
+    #[ str, str ]
+
     retrievalFileReader = RetrievalFileReader(retrievalFileName);
     keywordURLs = retrievalFileReader.getKeywordURLPairs();
     
