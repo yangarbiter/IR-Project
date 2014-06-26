@@ -196,10 +196,11 @@ class DocumentBrowser:
         for paragraph in paragraphs:
             for word in paragraph:
                 wordPrimitive = self.wordPrimitiveDict[word];
-                if wordPrimitive in feedbackDict:
-                    feedbackDict[wordPrimitive] += 1;
+                feedbackPair = (wordPrimitive, keyword);
+                if feedbackPair in feedbackDict:
+                    feedbackDict[feedbackPair] += 1;
                 else:
-                    feedbackDict[wordPrimitive] = 1;
+                    feedbackDict[feedbackPair] = 1;
 
         return feedbackDict;
 
@@ -212,7 +213,7 @@ class DocumentBrowser:
 # parameter nextWordCount: A positive integer
 # parameter distanceThreshold: A positive integer
 # return: ["feedback string 1", "feedback string 2", ...]
-def getFeedbackTerms(termURLPairs, previousWordCount = 10, nextWordCount = 10, distanceThreshold = 2):
+def getFeedbackTerms(termURLPairs, previousWordCount = 20, nextWordCount = 20, distanceThreshold = 3):
     allFeedbackDict = {};
 
     for (term, URL) in termURLPairs:
