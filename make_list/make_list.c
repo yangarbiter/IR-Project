@@ -32,7 +32,7 @@ double corpus_df[CORPUS_SIZE];
 int corpus_cnt = 0;
 char stopword_list[CORPUS_SIZE][STR_LENGTH];
 int stopword_cnt = 0;
-
+double k5 = 0.5;
 int cmp(const void *a, const void *b)// use for sorting weights
 {
 	term_t *termA = (term_t*)a;
@@ -150,10 +150,15 @@ add_term(char* str, char* tagger, double tf_weight ,double idf_weight, double no
 		term[i].df = find_df(str);
 		term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight);
 		}
+		if(link ==1)
+			term[i].weight *= k5;
 	else
 	{
 		term[i].tf++;
-		term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight * tf_weight) ;
+		if(link == 0)
+			term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight * tf_weight) ;
+		else
+			term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight * tf_weight * k5) ;
 	}
 }
 
@@ -171,13 +176,14 @@ int main(int argc, char * argv[])
 		fprintf(stderr,"argument number error\n");
 		return 1;
 	}
-	if(argc >= 10)
+	if(argc >= 11)
 	{
 		sscanf(argv[5], "%lf", &filter);
 		sscanf(argv[6], "%lf", &k1);
 		sscanf(argv[7], "%lf", &k2);
 		sscanf(argv[8], "%lf", &k3);
 		sscanf(argv[9], "%lf", &k4);
+		sscanf(argv[10], "%lf", &k5);
 	}
 	//generate pipes
 	int read_fd[2], write_fd[2];
@@ -295,7 +301,8 @@ int main(int argc, char * argv[])
 			buf+=(strlen(str)+strlen(tagger)+2);
 			if(to_valid_word(str) == 0)
 				continue;
-			add_term(s, tagger, k1, k2, k3, 0);
+			
+			add_term(s, tagger, k1, k2, k3, 1);
 		} 	
 		//}
 	}
@@ -322,12 +329,31 @@ int main(int argc, char * argv[])
 			for(i = 0; i < now_term ; i++)
 				if(strcmp(term[i].voc , s) == 0)
 					break;
-			//fprintf( stderr,"i =%d %s %s\n", i, s, new_str);
+			fprintf( stderr,"%s %s\n",s, new_str);
 			if(i  < now_term)
 			{
 				//fprintf(stderr, "%s\n", s);
 				if(new_str[0] == 'F')
 					term[i].weight = k4;
+				fprintf(stderr, "weight decreases to %lf\n", term[i].weight);
+			}
+		}
+		else if(buf[0] == '*')
+		{
+			
+			for(i = 0; i <= strlen(buf); i++)
+				buf[i] = buf[i+1];
+			to_sentence(buf);
+			fprintf(write_fp, "%s\n", buf);
+			fflush(write_fp);
+			fgets(buf, BUF_SIZE, read_fp);
+			while(sscanf(buf,"%s %s", str, tagger)!=EOF)
+			{
+				buf+=(strlen(str)+strlen(tagger)+2);
+				if(to_valid_word(str) == 0)
+					continue;
+				//fprintf(stderr,"add %s\n", s);
+				add_term(s, tagger, k1, k2, k3, 1);
 			}
 		}
 		else
