@@ -4,40 +4,7 @@ import codecs;
 import string;
 import copy;
 import http.client;
-
-class RetrievalFileReader:
-    def __init__(self, fileName):
-        self.fileName = fileName;
-        self._readKeywordURLPairs();
-
-    def _readKeywordURLPairs(self):
-        inFile = open(self.fileName, "r");
-
-        self.keywordURLs = [];
-        itemIndex = 0;
-        keyword = "";
-        URL = "";
-        for line in inFile:
-            row = line.strip();
-            if len(row) == 0:
-                itemIndex = 0;
-                continue;
-            if itemIndex == 4:
-                itemIndex = 0;
-
-            if itemIndex == 0:
-                keyword = row;
-
-            if itemIndex == 3:
-                URL = row;
-                self.keywordURLs.append((keyword, URL));
-            
-            itemIndex += 1;    
-
-        inFile.close();
-
-    def getKeywordURLPairs(self):
-        return self.keywordURLs;
+from html.parser import HTMLParser;
 
 class WebpageReader:
     def __init__(self, webpageURL):
@@ -53,13 +20,9 @@ class WebpageReader:
         else:
             self.webpageURLNoProtocal = self.webpageURL;
 
-        #print(self.webpageURLNoProtocal);
-
     def _getDomainName(self):
         slashIndex = self.webpageURLNoProtocal.find("/");
         self.domainName = self.webpageURLNoProtocal[ : slashIndex];
-
-        #print(self.domainName);
 
     def _getPortNumber(self):
         colonIndex = self.domainName.rfind(":");
@@ -69,27 +32,44 @@ class WebpageReader:
         else:
             self.portNumber = 80;
 
-        #print(self.portNumber);
-
     def _getResourcePath(self):
         slashIndex = self.webpageURLNoProtocal.find("/");
         self.resourcePath = self.webpageURLNoProtocal[slashIndex : ];
         
-        #print(self.resourcePath);
-
     def readContent(self):
         connection = http.client.HTTPConnection(self.domainName, self.portNumber);
         connection.request("GET", self.resourcePath);
         content = connection.getresponse().read(); # the variable "content" is of type "byte"
         connection.close();
 
-        return str(content); # returns "content" of type "str"
+        return str(content); # returns "content" of type "unicode"
+
+class HTMLTagRemover(HTMLParser):
+    def __init__(self):
+        self.reset();
+        self.tagRemovedContent = "";
+        self.convert_charrefs = True;
+        self.strict = False;
+
+    def handle_data(self, words):
+        self.tagRemovedContent += words;
+    
+    def handle_starttag(self, tag, attributes):
+        self.tagRemovedContent += " ";
+
+    def handle_endtag(self, tag):
+        self.tagRemovedContent += " ";
+
+    def getTagRemovedContent(self):
+        return copy.deepcopy(str(self.tagRemovedContent));
 
 class DocumentBrowser:
-    def __init__(self, _content, _previousWordCount = 20, _nextWordCount = 20, _distanceThreshold = 3):
 
+    def __init__(self, _content, _previousWordCount, _nextWordCount, _distanceThreshold):
         content = copy.deepcopy(_content);
+
         content = self._removeHTMLTags(content);
+        
         content = self._removePunctuation(content);
         
         self.contentWords = content.strip().split();
@@ -105,20 +85,9 @@ class DocumentBrowser:
         self.distanceThreshold = _distanceThreshold;
 
     def _removeHTMLTags(self, content):
-        newContent = "";
-
-        tagLayer = 0;
-        for character in content:
-            if character == "<":
-                tagLayer += 1;
-            
-            if tagLayer == 0:
-                newContent += character;
-            
-            if character == ">":
-                tagLayer -= 1;
-                newContent += " "; # HTML tags is replaced with " "
-        
+        tagRemover = HTMLTagRemover();
+        tagRemover.feed(content);
+        newContent = tagRemover.getTagRemovedContent();
         return newContent;
 
     def _transformLowerCase(self, content):
@@ -129,7 +98,9 @@ class DocumentBrowser:
         punctuationDict = {p: True for p in string.punctuation};
 
         for character in content:
-            if character not in punctuationDict:
+            if character in punctuationDict:
+                newContent += " ";
+            else:
                 newContent += character;
 
         return newContent;
@@ -162,14 +133,11 @@ class DocumentBrowser:
     def _isSameWord(self, word1, word2):
         editDistance = self._getEditDistance(word1, word2);
         isSame = (editDistance <= self.distanceThreshold);
-        if isSame:
-            print("\tFound word: ", word1);
         return isSame;
 
     def _findKeywords(self, keywords):
         for (i, keyword) in enumerate(keywords):
-            newKeyword = self._removeHTMLTags(keyword);
-            newKeyword = self._transformLowerCase(newKeyword);
+            newKeyword = self._transformLowerCase(keyword);
             newKeyword = self._removePunctuation(newKeyword);
             keywords[i] = newKeyword;
 
@@ -195,13 +163,16 @@ class DocumentBrowser:
 
         return keywordIndices;
 
-    def _fetchParagraph(self, firstIndex, lastIndex):
-        return self.documentWords[firstIndex : lastIndex + 1];
+    def _fetchParagraph(self, firstIndex, lastIndex, keywordIndex):
+        previousParagraph = self.documentWords[firstIndex : keywordIndex];
+        nextParagraph = self.documentWords[keywordIndex + 1 : lastIndex + 1];
+        return previousParagraph + nextParagraph;
 
     def _getKeywordParagraphs(self, keyword):
         paragraphs = [];
         subKeywords = keyword.strip().split();
         subKeywordCount = len(subKeywords);
+        
         keywordIndices = self._findKeywords(subKeywords);
 
         for keywordIndex in keywordIndices:
@@ -209,11 +180,11 @@ class DocumentBrowser:
             if paragraphFirstIndex < 0:
                 paragraphFirstIndex = 0;
 
-            paragraphLastIndex = keywordIndex + subKeywordCount + self.nextWordCount;
+            paragraphLastIndex = keywordIndex + subKeywordCount + self.nextWordCount - 1;
             if paragraphLastIndex >= self.documentWordCount:
                 paragraphLastIndex = self.documentWordCount - 1;
 
-            newParagraph = self._fetchParagraph(paragraphFirstIndex, paragraphLastIndex);
+            newParagraph = self._fetchParagraph(paragraphFirstIndex, paragraphLastIndex, keywordIndex);
             paragraphs.append(newParagraph);
 
         return paragraphs;
@@ -235,40 +206,28 @@ class DocumentBrowser:
 """
     usage: python3 feedback.py [input_query_file_path] [output_feedback_file_path] [previous_word_count] [next_word_count] [distance_threshold]
 """
-def main():
-    retrievalFileName = sys.argv[1];
-    feedbackFileName = sys.argv[2];
 
-    previousWordCount = 20;
-    nextWordCount = 20;
-    if len(sys.argv) >= 5:
-        previousWordCount = int(sys.argv[3]);
-        nextWordCount = int(sys.argv[4]);
+# parameter termURLPairs: [(term_1, URL_1), (term_2, URL_2), ...]
+# parameter previousWordCount: A positive integer
+# parameter nextWordCount: A positive integer
+# parameter distanceThreshold: A positive integer
+# return: ["feedback string 1", "feedback string 2", ...]
+def getFeedbackTerms(termURLPairs, previousWordCount = 10, nextWordCount = 10, distanceThreshold = 2):
+    allFeedbackDict = {};
 
-    distanceThreshold = 3;
-    if len(sys.argv) >= 6:
-        distanceThreshold = int(sys.argv[5]);
-
-    retrievalFileReader = RetrievalFileReader(retrievalFileName);
-    keywordURLs = retrievalFileReader.getKeywordURLPairs();
-    
-    feedbackFile = open(feedbackFileName, "w");
-    
-    for (keyword, URL) in keywordURLs:
+    for (term, URL) in termURLPairs:
         print("Read webpage " + str(URL));
         webpageReader = WebpageReader(URL);
         content = webpageReader.readContent();
 
-        print("Content type: ", type(content));
-
-        print("Execute feedback of the keyword \"" + str(keyword) + "\"");
+        print("Obtain feedback of the term \"" + str(term) + "\"");
         documentBrowser = DocumentBrowser(content, previousWordCount, nextWordCount, distanceThreshold);
-        feedbackDict = documentBrowser.gatherFeedbackWords(keyword);
-        
-        for (word, count) in sorted(feedbackDict.items(), key = lambda kv: (kv[1], kv[0]), reverse = True):
-            feedbackFile.write(str(word) + "\n");
-    
-    feedbackFile.close();
+        feedbackDict = documentBrowser.gatherFeedbackWords(term);
 
-if __name__ == "__main__":
-    main();
+        for (term, count) in feedbackDict.items():
+            if term in allFeedbackDict:
+                allFeedbackDict[term] += count;
+            else:
+                allFeedbackDict[term] = count;
+    
+    return [term for (term, count) in sorted(allFeedbackDict.items(), reverse = True)];
