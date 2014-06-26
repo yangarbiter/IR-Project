@@ -279,34 +279,35 @@ int main(int argc, char * argv[])
 		
 		fgets(buf, BUF_SIZE, fp);
 		parse_html_tag(buf);
-		fprintf(write_fp, "%s", buf);
+		to_sentence(buf);
+		//printf("reabuf = %s", buf);
+		fprintf(write_fp, "%s\n", buf);
 		fflush(write_fp);
 		fgets(buf, BUF_SIZE, read_fp);
+		//printf("reabuf = %s", buf);
 		while(sscanf(buf,"%s %s", str, tagger)!=EOF)
 		{
+			//fprintf(stderr,"LLadd %s\n", s);
 			buf+=(strlen(str)+strlen(tagger)+2);
 			if(to_valid_word(str) == 0)
 				continue;
-			//fprintf(stderr,"add %s\n", s);
 			add_term(s, tagger, k1, k2, k3, 0);
 		} 	
 		//}
 	}
 	fclose(fp);
 	qsort(term, now_term, sizeof(term_t), cmp);
-	for(i = now_term-1; i>=0 && term[i].weight >= 0 ; i--){
+	for(i = now_term-1; i>=0 && term[i].weight >= filter ; i--)
 			  printf("%s\n", term[i].o_voc);
-			  //fprintf(stderr, "%s %lf\n", term[i].o_voc, term[i].weight);
-	}
-	//fprintf(stderr, "XD\n");
-	//printf("***************HHHH***********\n"); 
-	printf("\n");;
+			//printf("%s %lf\n", term[i].o_voc, term[i].weight);
+		//printf("***************HHHH***********\n"); 
+	printf("\n");
 	fflush(stdout);
 	
 	while(1)
 	{
 		fgets(buf, BUF_SIZE, stdin);
-		fprintf(stderr,"gets = %s", buf);
+		//fprintf(stderr,"gets = %s", buf);
 		to_sentence(buf);
 		fprintf(write_fp, "%s\n", buf);
 		fflush(write_fp);
@@ -316,6 +317,7 @@ int main(int argc, char * argv[])
 			buf+=(strlen(str)+strlen(tagger)+2);
 			if(to_valid_word(str) == 0)
 				continue;
+			//fprintf(stderr,"add %s\n", s);
 			add_term(s, tagger, k1, k2, k3, 0);
 		}
 
