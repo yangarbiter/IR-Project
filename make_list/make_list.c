@@ -55,7 +55,7 @@ void parse_html_tag(char* str)//parse <>, </>
 	char *tmp;
 	int i, flag = 0, tmplen = 0;
 	tmp = malloc(BUF_SIZE*sizeof(char));
-	for(i = 0; i < strlen(str); i++)
+	for(i = 0; i <= strlen(str); i++)
 	{
 		if(str[i] == '<')
 			flag = 1;
@@ -64,9 +64,11 @@ void parse_html_tag(char* str)//parse <>, </>
 			flag = 0;
 			continue;
 		}
-		if(flag == 0)	
+		if(flag == 0)
 			tmp[tmplen++] = str[i];
 	}
+	//printf("str = %s", str);
+	//printf("tmp = %s", tmp);
 	strcpy(str, tmp);
 	free(tmp);
 }
@@ -278,9 +280,11 @@ int main(int argc, char * argv[])
 			//{
 		
 		fgets(buf, BUF_SIZE, fp);
+		//printf("buf = %s", buf);
 		parse_html_tag(buf);
+		//printf("rbuf = %s", buf);
 		to_sentence(buf);
-		//printf("reabuf = %s", buf);
+		//printf("rehhhabuf = %s", buf);
 		fprintf(write_fp, "%s\n", buf);
 		fflush(write_fp);
 		fgets(buf, BUF_SIZE, read_fp);
