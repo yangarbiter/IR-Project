@@ -11,6 +11,7 @@ double MatchCnt ;
 vector <string> Ret ;
 vector <string> Ans ;
 int RetSz , AnsSz ;
+double Th ;
 void ReadFiles( const char *f1 , const char *f2 )
 {
     FILE *fin1 = fopen( f1 , "r" ) ;
@@ -28,16 +29,45 @@ void ReadFiles( const char *f1 , const char *f2 )
     fclose( fin1 ) ;
     fclose( fin2 ) ;
 }
+int EditDis( string A , string B )
+{
+    int Al = A.length() ;
+    int Bl = B.length() ;
+    int dp[ 50 ][ 50 ] ;
+    memset( dp , 0 , sizeof( dp ) ) ;
+    for( int i = 1 ; i <= Al ; i++ )
+        dp[ i ][ 0 ] = dp[ i-1 ][ 0 ] + 1 ;
+    for( int i = 1 ; i <= Bl ; i++ )
+        dp[ 0 ][ i ] = dp[ 0 ][ i-1 ] + 1 ;
+    for( int i = 1 ; i <= Al ; i++ )
+        for( int j = 1 ; j <= Bl ; j++ )
+        {
+            int x1 = dp[i-1][j-1] + (A[i-1] == B[j-1] ? 0 : 2 ) ;
+            int x2 = dp[i-1][j] + 1 ;
+            int x3 = dp[i][j-1] + 1 ;
+            dp[i][j] = min( min( x1 , x2 ) , x3 ) ;
+        }
+    return dp[Al][Bl] ;
+}
 bool CheckMatch( int Target )
 {
-    bool Find = 0 ;
     for( int i = 0 ; i < AnsSz ; i++ )
-        if( Ans[i] == Ret[Target] )
-            Find = 1 ;
-    return Find ;
+    {
+        double Ec = (double) EditDis( Ans[i] , Ret[Target] ) ;
+        if( Ec / (double) Ans[i].length() <= Th )
+            return 1 ;
+    }
+    return 0 ;
 }
 int main( int argc , char *argv[ ] )
 {
+    if( argc != 4 )
+    {
+        printf( "Parameters Error!\n" ) ;
+        printf( "Usage: ./a.out Yor_Ans.txt  Correct_Ans.txt Thredhold" ) ;
+        return 0 ;
+    }
+    Th = (double) atof( argv[3] ) ;
     double SinglePre ;
     // 1:Ret  2:Ans
     ReadFiles( argv[1] , argv[2] ) ;
