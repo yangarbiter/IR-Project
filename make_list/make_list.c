@@ -17,6 +17,8 @@ typedef struct
 {
 	char voc[STR_LENGTH];// the stemmed word
 	char o_voc[STR_LENGTH];//the word before stemming
+	char related_term[CORPUS_SIZE][STR_LENGTH];
+	int related_cnt;
 	double tf;//term frequency
 	double df;//document frequency 
 	double weight;//term weight
@@ -28,8 +30,10 @@ int now_term = 0, max_term = 100;
 char sentence[BUF_SIZE];
 char original_word[STR_LENGTH];
 char corpus_list[CORPUS_SIZE][STR_LENGTH];
+char bigram_list[CORPUS_SIZE][STR_LENGTH];
 double corpus_df[CORPUS_SIZE];
 int corpus_cnt = 0;
+int bigram_cnt = 0;
 char stopword_list[CORPUS_SIZE][STR_LENGTH];
 int stopword_cnt = 0;
 double k4 = 0.85;
@@ -145,6 +149,7 @@ add_term(char* str, char* tagger, double tf_weight ,double idf_weight, double no
 		else
 			term[i].weight = 0.01;
 		now_term++;
+		term[i].related_cnt = 0;
 		term[i].tf = 1;
 		term[i].link = link;
 		term[i].df = find_df(str);
@@ -165,7 +170,8 @@ add_term(char* str, char* tagger, double tf_weight ,double idf_weight, double no
 
 int main(int argc, char * argv[])
 {
-	int i, j, k, num;
+	int i, j, k, num, cnt;
+	double k5 = 0.5;
 	char str[STR_LENGTH], new_str[STR_LENGTH], str2[STR_LENGTH], tagger[STR_LENGTH];
 	char *buf;
 	buf = malloc(BUF_SIZE*sizeof(char));
@@ -312,8 +318,10 @@ int main(int argc, char * argv[])
 					strcpy(str2, s);
 					if(to_valid_word(str) == 0)
 						continue;
-					if(find_df(str2) <= 10 && find_df(s) <= 10)
+					if(find_df(str2)/550 + find_df(s)/550 <= k5)
 					{
+						strcpy(bigram_list[bigram_cnt++], str2);
+						strcpy(bigram_list[bigram_cnt++], s);
 						strcat(str2, " ");
 						strcat(str2, s);
 						strcpy(original_word, new_str);
@@ -349,14 +357,18 @@ int main(int argc, char * argv[])
 			for(i = 0; i < now_term ; i++)
 				if(strcmp(term[i].voc , s) == 0)
 					break;
-			fprintf( stderr,"%s is ret\n", s);
+			//fprintf( stderr,"%s is ret\n", s);
 			if(i  < now_term)
 			{
-				fprintf(stderr, "new str = %s\n", new_str);
+				//fprintf(stderr, "new str = %s\n", new_str);
 				if(new_str[0] == 'F')
 				{
 					term[i].weight = 0.01;
-				    fprintf(stderr, "%s weight decreases to %lf\n", s, term[i].weight);
+				    	//fprintf(stderr, "%s weight decreases to %lf\n", s, term[i].weight);
+					for(j = 0 ; j < term[i].related_cnt; j++)
+						for(k = 0; k < now_term ; k++)
+							if(strcmp(term[k].voc, term[i].related_term[j]) == 0)
+								term[k].weight *= 0.5; 
 				}
 				else
 					term[i].weight = 10000;
@@ -383,17 +395,29 @@ int main(int argc, char * argv[])
 				for(i = 0; i < now_term ; i++)
 					if(strcmp(term[i].voc , str2) == 0)
 						break;
-				if(i  < now_term && term[i].weight >= filter && term[i].link == 0)
+				if(i  < now_term)
 				{
 					//fprintf(stderr, "add %s\n" , s);
-					add_term(s, tagger, k1, k2, k3, 1);
+					if(term[i].weight >= filter && term[i].link ==0)
+						add_term(s, tagger, k1, k2, k3, 1);
+					else if(term[i].weight < 0.05)
+					{
+						for(j = 0; j < now_term ; j++)
+							if(strcmp(term[j].voc , s) == 0)
+								break;
+						if(j < now_term)
+							term[j].weight *= 0.5;
+					}
+					strcpy(term[i].related_term[term[i].related_cnt++], s);
+						
 				}
 			}
 		}
 		else
 		{
-			for(i = 0 ; i < now_term ; i++)
-				term[i].weight *= decreasing_rate;
+			//printf("ggg\n");
+			//for(i = 0 ; i < now_term ; i++)
+				//term[i].weight *= decreasing_rate;
 			to_sentence(buf);
 			fprintf(write_fp, "%s\n", buf);
 			fflush(write_fp);
@@ -413,8 +437,10 @@ int main(int argc, char * argv[])
 					strcpy(str2, s);
 					if(to_valid_word(str) == 0)
 						continue;
-					if(find_df(str2) <= 10 && find_df(s) <= 10)
+					if(find_df(str2)/550 + find_df(s)/550 <= k5)
 					{
+						strcpy(bigram_list[bigram_cnt++], str2);
+						strcpy(bigram_list[bigram_cnt++], s);
 						strcat(str2, " ");
 						strcat(str2, s);
 						strcpy(original_word, new_str);
@@ -425,9 +451,20 @@ int main(int argc, char * argv[])
 				}
 			}
 			qsort(term, now_term, sizeof(term_t), cmp);
-			for(i = now_term-1; i>=0 && term[i].weight >= filter && i >= now_term-8; i--){
-				  printf("%s\n", term[i].o_voc);
-				fprintf(stderr, "%s %lf\n", term[i].o_voc, term[i].weight);}
+			cnt = 0;
+			for(i = now_term-1; i>=0 && term[i].weight >= 0 && cnt < 9; i--)
+			{
+				for(j = 0 ; j < bigram_cnt; j++)
+					if(strcmp(bigram_list[j], term[i].voc) == 0)
+						break;
+				if(j == bigram_cnt)
+				{
+					//printf("j = %d bigram_cnt = %d\n", j, bigram_cnt);
+					printf("%s\n", term[i].o_voc);
+					cnt++;
+				}
+				//fprintf(stderr, "%s %lf\n", term[i].o_voc, term[i].weight);}
+			}
 			//printf("***************HHHH***********\n"); 
 			printf("\n");
 			fflush(stdout);
