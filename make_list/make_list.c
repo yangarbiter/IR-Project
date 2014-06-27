@@ -149,9 +149,10 @@ add_term(char* str, char* tagger, double tf_weight ,double idf_weight, double no
 		term[i].link = link;
 		term[i].df = find_df(str);
 		term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight);
-		}
+		
 		if(link ==1)
 			term[i].weight *= k5;
+	}
 	else
 	{
 		term[i].tf++;
@@ -319,7 +320,7 @@ int main(int argc, char * argv[])
 	{	
 		//printf("gigi");
 		fgets(buf, BUF_SIZE, stdin);
-		fprintf(stderr,"form stdin get = %s", buf);
+		//fprintf(stderr,"form stdin get = %s", buf);
 		if(buf[0] == '&')
 		{
 			for(i = 0 ; i < strlen(buf); i++)
@@ -341,7 +342,7 @@ int main(int argc, char * argv[])
 		}
 		else if(buf[0] == '*')
 		{
-			fprintf(stderr, "recive feedback\n");
+			//fprintf(stderr, "recive feedback\n");
 			for(i = 0; i <= strlen(buf); i++)
 				buf[i] = buf[i+1];
 			to_sentence(buf);
@@ -350,7 +351,7 @@ int main(int argc, char * argv[])
 			fgets(buf, BUF_SIZE, read_fp);
 			while(sscanf(buf,"%s %s %s %s", str, tagger, str2, new_str)!=EOF)
 			{
-				fprintf(stderr, "%s is from %s\n", str, str2);
+				//fprintf(stderr, "%s is from %s\n", str, str2);
 				buf+=(strlen(str)+strlen(tagger)+strlen(str2)+strlen(new_str)+4);
 				if(to_valid_word(str2) == 0)
 					continue;
@@ -360,9 +361,9 @@ int main(int argc, char * argv[])
 				for(i = 0; i < now_term ; i++)
 					if(strcmp(term[i].voc , str2) == 0)
 						break;
-				if(i  < now_term && term[i].weight >= filter)
+				if(i  < now_term && term[i].weight >= filter && term[i].link == 0)
 				{
-					fprintf(stderr, "add %s\n" , s);
+					//fprintf(stderr, "add %s\n" , s);
 					add_term(s, tagger, k1, k2, k3, 1);
 				}
 			}
@@ -383,7 +384,7 @@ int main(int argc, char * argv[])
 			}
 		}
 		qsort(term, now_term, sizeof(term_t), cmp);
-		for(i = now_term-1; i>=0 && term[i].weight >= filter ; i--)
+		for(i = now_term-1; i>=0 && term[i].weight >= 0; i--)
 			  printf("%s\n", term[i].o_voc);
 			//printf("%s %lf\n", term[i].o_voc, term[i].weight);
 		//printf("***************HHHH***********\n"); 
