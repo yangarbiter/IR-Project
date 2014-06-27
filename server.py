@@ -10,6 +10,7 @@ import feedback
 STATIC_PATH = './static'
 RESULT_PATH = './result'
 
+used_term = {}
 make_list_prog = ''
 first = True
 
@@ -57,10 +58,16 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
     def send_result(self, vocabs):
         global make_list_prog
+        global used_term
         msgs = []
         term_url_pair = []
+        for i in vocabs:
+            if i in used_term:
+                msgs.append(used_term[i])
+                vocabs.remove(i)
+
         queries = google_query.main(vocabs)
-        print("query done")
+        print("query done") 
 
         for i in range(len(queries)):
             msg = {}
@@ -72,15 +79,20 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             
             term_url_pair.append((vocabs[i], msg['url']))
 
-        output = ""
+        output = "* "
         ret = feedback.getFeedbackTerms(term_url_pair)
         for p in ret:
+            if p[1] in used_term: continue
             output += p[0] + ' '
             output += p[1] + ' '
-        print(output)
+        #print(output)
+        output += '\n'
         make_list_prog.stdin.write(bytes(output, 'utf-8'))
+        make_list_prog.stdin.flush()
         self.write_message(json.dumps(msgs))
 
+        for i in msgs:
+            used_term[i['vocab']] = i
 
 
 class FeedbackHandler(BaseHandler):

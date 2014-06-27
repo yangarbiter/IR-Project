@@ -4,6 +4,7 @@ window.onload = function(){
 	var transcription = document.getElementById('transcription');
 	var result_container = document.getElementById('result-container');
 	var ws = new WebSocket("ws://"+location.host+"/ws");
+	var count = 1;
 	
 	ws.onopen = function() {
 		console.log("ws open");
@@ -65,8 +66,15 @@ window.onload = function(){
 	recognizer.onresult = function(event) {
 		transcription.textContent = '';
 		for (var i = event.resultIndex; i < event.results.length; i++) {
-			if (event.results[i].isFinal) {
+			if ( transcription.textContent.length > 100 * count ){
+				console.log("Send: " + transcription.textContent)
+				transcription.textContent += event.results[i][0].transcript;
+				count += 1;
+				ws.send(transcription.textContent);
+				return;
+			}else if (event.results[i].isFinal) {
 				console.log("Result: " + event.results[i][0].transcript)
+				count = 1;
 				//transcription.textContent = event.results[i][0].transcript + ' (Confidence: ' + event.results[i][0].confidence + ')';
 				transcription.textContent = event.results[i][0].transcript;
 				ws.send(transcription.textContent);

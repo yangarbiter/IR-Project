@@ -238,7 +238,7 @@ def main(vocabs):
             exit()
         search = pygoogle( log_level=log_level, query=query, pages=args.pages, hl=args.language)
         ret.append(search.__search__(True))
-        time.sleep(1)
+        time.sleep(2)
         #print(i)
     return ret
 
