@@ -117,7 +117,7 @@ int to_valid_word(char* str)
 	}
 	strcpy(str, tmp);
 	stemstring(str);
-	if(is_stopword(s))
+	if(is_stopword(s) || strlen(s) <= 2 )
 		return 0;//will not be concerned
 	if(flag == 0 && strlen(s) <=4)
 		return 0;//will not be concerned
@@ -171,7 +171,7 @@ add_term(char* str, char* tagger, double tf_weight ,double idf_weight, double no
 int main(int argc, char * argv[])
 {
 	int i, j, k, num, cnt;
-	double k5 = 0.5;
+	double k5 = 0.05;
 	char str[STR_LENGTH], new_str[STR_LENGTH], str2[STR_LENGTH], tagger[STR_LENGTH];
 	char *buf;
 	buf = malloc(BUF_SIZE*sizeof(char));
@@ -352,12 +352,28 @@ int main(int argc, char * argv[])
 			for(i = 0 ; i < strlen(buf); i++)
 				buf[i] = buf[i+1];
 			sscanf(buf, "%s %s", str, new_str);
-			if(to_valid_word(str) == 0)
+			if(strcmp(new_str , "True")!= 0 && strcmp(new_str, "False") != 0)
+			{
+				sscanf(buf, "%s %s %s" , str, str2, new_str);
+				if(to_valid_word(str) == 0)
 					continue;
+				strcpy(str, s);
+				if(to_valid_word(str2) == 0)
+					continue;
+				strcat(str, " ");
+				strcat(str, s);
+				strcpy(s, str);
+				//printf("str = %s\n", s);
+				
+			}
+			else
+				if(to_valid_word(str) == 0)
+					continue;
+				    	//fprintf(stderr, "%s weight decreases to %lf\n", s, term[i].weight);
 			for(i = 0; i < now_term ; i++)
 				if(strcmp(term[i].voc , s) == 0)
 					break;
-			//fprintf( stderr,"%s is ret\n", s);
+			fprintf( stderr,"%s is ret\n", s);
 			if(i  < now_term)
 			{
 				//fprintf(stderr, "new str = %s\n", new_str);
@@ -452,7 +468,7 @@ int main(int argc, char * argv[])
 			}
 			qsort(term, now_term, sizeof(term_t), cmp);
 			cnt = 0;
-			for(i = now_term-1; i>=0 && term[i].weight >= 0 && cnt < 9; i--)
+			for(i = now_term-1; i>=0 && term[i].weight >= filter && cnt < 9; i--)
 			{
 				for(j = 0 ; j < bigram_cnt; j++)
 					if(strcmp(bigram_list[j], term[i].voc) == 0)
@@ -461,9 +477,9 @@ int main(int argc, char * argv[])
 				{
 					//printf("j = %d bigram_cnt = %d\n", j, bigram_cnt);
 					printf("%s\n", term[i].o_voc);
+					//fprintf(stderr, "%s %lf\n", term[i].o_voc, term[i].weight);
 					cnt++;
 				}
-				//fprintf(stderr, "%s %lf\n", term[i].o_voc, term[i].weight);}
 			}
 			//printf("***************HHHH***********\n"); 
 			printf("\n");
