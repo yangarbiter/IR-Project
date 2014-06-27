@@ -17,6 +17,8 @@ class WebpageReader:
     def _removeProtocalName(self):
         if self.webpageURL.find("http://") == 0:
             self.webpageURLNoProtocal = self.webpageURL[7 : ];
+        elif self.webpageURL.find("https://") == 0:
+            self.webpageURLNoProtocal = self.webpageURL[8 : ];
         else:
             self.webpageURLNoProtocal = self.webpageURL;
 
@@ -26,6 +28,7 @@ class WebpageReader:
 
     def _getPortNumber(self):
         colonIndex = self.domainName.rfind(":");
+        print("colon index for \":\": ", colonIndex);
         if colonIndex != -1:
             self.portNumber = int(self.domainName[colonIndex + 1 : ]);
             self.domainName = self.domainName[ : colonIndex];
@@ -205,8 +208,9 @@ class DocumentBrowser:
         return feedbackDict;
 
 """
-    usage: python3 feedback.py [input_query_file_path] [output_feedback_file_path] [previous_word_count] [next_word_count] [distance_threshold]
+usage: python3 feedback.py [input_query_file_path] [output_feedback_file_path] [previous_word_count] [next_word_count] [distance_threshold]
 """
+
 # parameter termURLPairs: [(term_1, URL_1), (term_2, URL_2), ...]
 # parameter previousWordCount: A positive integer
 # parameter nextWordCount: A positive integer

@@ -66,7 +66,7 @@ window.onload = function(){
 	recognizer.onresult = function(event) {
 		transcription.textContent = '';
 		for (var i = event.resultIndex; i < event.results.length; i++) {
-			if ( transcription.textContent.length > 100 * count ){
+			if ( transcription.textContent.length > 150 * count ){
 				console.log("Send: " + transcription.textContent)
 				transcription.textContent += event.results[i][0].transcript;
 				count += 1;

@@ -32,7 +32,7 @@ double corpus_df[CORPUS_SIZE];
 int corpus_cnt = 0;
 char stopword_list[CORPUS_SIZE][STR_LENGTH];
 int stopword_cnt = 0;
-double k5 = 0.5;
+double k5 = 0.8;
 int cmp(const void *a, const void *b)// use for sorting weights
 {
 	term_t *termA = (term_t*)a;
@@ -331,7 +331,7 @@ int main(int argc, char * argv[])
 			for(i = 0; i < now_term ; i++)
 				if(strcmp(term[i].voc , s) == 0)
 					break;
-			//fprintf( stderr,"%s %s\n",s, new_str);
+			fprintf( stderr,"%s is ret\n", s);
 			if(i  < now_term)
 			{
 				//fprintf(stderr, "%s\n", s);
@@ -384,7 +384,7 @@ int main(int argc, char * argv[])
 			}
 		}
 		qsort(term, now_term, sizeof(term_t), cmp);
-		for(i = now_term-1; i>=0 && term[i].weight >= 0; i--)
+		for(i = now_term-1; i>=0 && term[i].weight >= filter; i--)
 			  printf("%s\n", term[i].o_voc);
 			//printf("%s %lf\n", term[i].o_voc, term[i].weight);
 		//printf("***************HHHH***********\n"); 

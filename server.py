@@ -64,8 +64,9 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         for i in vocabs:
             if i in used_term:
                 msgs.append(used_term[i])
-                vocabs.remove(i)
+        vocabs = [ i for i in vocabs if i not in used_term ] 
 
+        print("quering", vocabs) 
         queries = google_query.main(vocabs)
         print("query done") 
 

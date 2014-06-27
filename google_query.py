@@ -1,7 +1,5 @@
 #!/usr/bin/python3
-"""
-Google AJAX Search Module
-http://code.google.com/apis/ajaxsearch/documentation/reference.html
+""" Google AJAX Search Module http://code.google.com/apis/ajaxsearch/documentation/reference.html
 Needs Python 2.6 or later
 """
 
@@ -238,7 +236,7 @@ def main(vocabs):
             exit()
         search = pygoogle( log_level=log_level, query=query, pages=args.pages, hl=args.language)
         ret.append(search.__search__(True))
-        time.sleep(2)
+        time.sleep(3)
         #print(i)
     return ret
 
