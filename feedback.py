@@ -5,6 +5,7 @@ import string;
 import copy;
 import http.client;
 from html.parser import HTMLParser;
+import unicodedata;
 
 class WebpageReader:
     def __init__(self, webpageURL):
@@ -28,7 +29,6 @@ class WebpageReader:
 
     def _getPortNumber(self):
         colonIndex = self.domainName.rfind(":");
-        print("colon index for \":\": ", colonIndex);
         if colonIndex != -1:
             self.portNumber = int(self.domainName[colonIndex + 1 : ]);
             self.domainName = self.domainName[ : colonIndex];
@@ -41,7 +41,10 @@ class WebpageReader:
         
     def readContent(self):
         connection = http.client.HTTPConnection(self.domainName, self.portNumber);
-        connection.request("GET", self.resourcePath);
+        try:
+            connection.request("GET", self.resourcePath);
+        except:
+            return "";
         content = connection.getresponse().read(); # the variable "content" is of type "byte"
         connection.close();
 
@@ -223,6 +226,8 @@ def getFeedbackTerms(termURLPairs, previousWordCount = 20, nextWordCount = 20, d
         print("Read webpage " + str(URL));
         webpageReader = WebpageReader(URL);
         content = webpageReader.readContent();
+        if len(content) == 0:
+            continue;
 
         print("Obtain feedback of the term \"" + str(term) + "\"");
         documentBrowser = DocumentBrowser(content, previousWordCount, nextWordCount, distanceThreshold);
