@@ -32,7 +32,7 @@ double corpus_df[CORPUS_SIZE];
 int corpus_cnt = 0;
 char stopword_list[CORPUS_SIZE][STR_LENGTH];
 int stopword_cnt = 0;
-double k5 = 0.8;
+double k4 = 0.85;
 int cmp(const void *a, const void *b)// use for sorting weights
 {
 	term_t *termA = (term_t*)a;
@@ -151,7 +151,7 @@ add_term(char* str, char* tagger, double tf_weight ,double idf_weight, double no
 		term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight);
 		
 		if(link ==1)
-			term[i].weight *= k5;
+			term[i].weight *= k4;
 	}
 	else
 	{
@@ -159,7 +159,7 @@ add_term(char* str, char* tagger, double tf_weight ,double idf_weight, double no
 		if(link == 0)
 			term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight * tf_weight) ;
 		else
-			term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight * tf_weight * k5) ;
+			term[i].weight+= ( log(  (DOC_NUM-term[i].df+0.5)/(term[i].df+0.5)  )  *idf_weight * tf_weight * k4) ;
 	}
 }
 
@@ -170,7 +170,7 @@ int main(int argc, char * argv[])
 	char *buf;
 	buf = malloc(BUF_SIZE*sizeof(char));
 	s = (char *) malloc(i_max+1);
-	double filter = 0.23, k1 = 0.15, k2  = 0.02, k3 = 0.15, k4 = 0.01;
+	double filter = 0.23, k1 = 0.15, k2  = 0.02, k3 = 0.15, decreasing_rate = 0.95;
 	//fprintf(stderr,"start init\n");
 	if(argc < 5)
 	{
@@ -184,7 +184,7 @@ int main(int argc, char * argv[])
 		sscanf(argv[7], "%lf", &k2);
 		sscanf(argv[8], "%lf", &k3);
 		sscanf(argv[9], "%lf", &k4);
-		sscanf(argv[10], "%lf", &k5);
+		sscanf(argv[10], "%lf", &decreasing_rate);
 	}
 	//generate pipes
 	int read_fd[2], write_fd[2];
@@ -308,13 +308,13 @@ int main(int argc, char * argv[])
 		//}
 	}
 	fclose(fp);
-	qsort(term, now_term, sizeof(term_t), cmp);
-	for(i = now_term-1; i>=0 && term[i].weight >= filter ; i--)
-			  printf("%s\n", term[i].o_voc);
+	//qsort(term, now_term, sizeof(term_t), cmp);
+	//for(i = now_term-1; i>=0 && term[i].weight >= filter ; i--)
+			  //printf("%s\n", term[i].o_voc);
 			//printf("%s %lf\n", term[i].o_voc, term[i].weight);
 	//	printf("***************HHHH***********\n"); 
-	printf("\n");
-	fflush(stdout);
+	//printf("\n");
+	//fflush(stdout);
 	
 	while(1)
 	{	
@@ -334,10 +334,14 @@ int main(int argc, char * argv[])
 			fprintf( stderr,"%s is ret\n", s);
 			if(i  < now_term)
 			{
-				//fprintf(stderr, "%s\n", s);
+				fprintf(stderr, "new str = %s\n", new_str);
 				if(new_str[0] == 'F')
-					term[i].weight = k4;
-				//fprintf(stderr, "weight decreases to %lf\n", term[i].weight);
+				{
+					term[i].weight = 0.01;
+				    fprintf(stderr, "%s weight decreases to %lf\n", s, term[i].weight);
+				}
+				else
+					term[i].weight = 10000;
 			}
 		}
 		else if(buf[0] == '*')
@@ -370,6 +374,8 @@ int main(int argc, char * argv[])
 		}
 		else
 		{
+			for(i = 0 ; i < now_term ; i++)
+				term[i].weight *= decreasing_rate;
 			to_sentence(buf);
 			fprintf(write_fp, "%s\n", buf);
 			fflush(write_fp);
@@ -382,14 +388,14 @@ int main(int argc, char * argv[])
 				//fprintf(stderr,"add %s\n", s);
 				add_term(s, tagger, k1, k2, k3, 0);
 			}
+			qsort(term, now_term, sizeof(term_t), cmp);
+			for(i = now_term-1; i>=0 && term[i].weight >= filter && i >= now_term-8; i--){
+				  printf("%s\n", term[i].o_voc);
+				fprintf(stderr, "%s %lf\n", term[i].o_voc, term[i].weight);}
+			//printf("***************HHHH***********\n"); 
+			printf("\n");
+			fflush(stdout);
 		}
-		qsort(term, now_term, sizeof(term_t), cmp);
-		for(i = now_term-1; i>=0 && term[i].weight >= filter; i--)
-			  printf("%s\n", term[i].o_voc);
-			//printf("%s %lf\n", term[i].o_voc, term[i].weight);
-		//printf("***************HHHH***********\n"); 
-		printf("\n");
-		fflush(stdout);
 	}
 
 	free(s);

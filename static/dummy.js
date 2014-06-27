@@ -1,6 +1,5 @@
 
 window.onload = function(){
-	var recognizer = new webkitSpeechRecognition();
 	var transcription = document.getElementById('transcription');
 	var result_container = document.getElementById('result-container');
 	var ws = new WebSocket("ws://"+location.host+"/ws");
@@ -59,36 +58,6 @@ window.onload = function(){
 	};
 
 
-	// recognizer setting
-	recognizer.interimResults = true;
-	recognizer.continuous = true;
-	recognizer.lang = 'en-US';
-	recognizer.onresult = function(event) {
-		transcription.textContent = '';
-		for (var i = event.resultIndex; i < event.results.length; i++) {
-			if ( transcription.textContent.length > 80 * count ){
-				console.log("Send: " + transcription.textContent)
-				transcription.textContent += event.results[i][0].transcript;
-				count += 1;
-				ws.send(transcription.textContent);
-				return;
-			}else if (event.results[i].isFinal) {
-				console.log("Result: " + event.results[i][0].transcript)
-				count = 1;
-				//transcription.textContent = event.results[i][0].transcript + ' (Confidence: ' + event.results[i][0].confidence + ')';
-				transcription.textContent = event.results[i][0].transcript;
-				ws.send(transcription.textContent);
-			} else {
-				console.log(event.results[i][0].transcript)
-				transcription.textContent += event.results[i][0].transcript;
-			}
-		}
-	};
-	// log errors
-	recognizer.onerror = function(event) {
-		console.log('Recognition error: ' + event.message);
-	};
-
 
 	document.getElementById('btn-start-recog').addEventListener('click', function() {
 		info = {title: $('#info-title').val(),
@@ -98,20 +67,15 @@ window.onload = function(){
 		$.post("info", info);
 		$('#info-container').css("display", "none");
 		$('#result-container').css("display", "block");
-		try {
-			recognizer.start();
-			//console.log('Recognizer started');
-		} catch(ex) {
-			console.log('Recognizer error:' + ex.message);
-		}
 	});
 
 	document.getElementById('btn-stop-recog').addEventListener('click', function() {
 		$('#info-container').css("display", "block");
 		$('#result-container').css("display", "none");
-		recognizer.stop();
-		//console.log('Recognition stopped')
 	});
 
+	document.getElementById('btn-send').addEventListener('click', function() {
+		ws.send($('#transcript').val())
+	});
 
 };

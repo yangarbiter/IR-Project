@@ -3,6 +3,7 @@
 import tornado.ioloop, tornado.web, tornado.websocket
 import json
 import subprocess
+import time
 
 import google_query
 import feedback
@@ -29,11 +30,13 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         
     def on_message(self, message):
         global make_list_prog
+        """
         global first
 
         if first:
             vocabs = self.get_vocabs()
             first = False
+        """ 
 
         print(message)
         make_list_prog.stdin.write(bytes(message+'\n', 'utf-8'))
@@ -50,6 +53,12 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
     def get_vocabs(self):
         vocabs = []
+        """
+        line = make_list_prog.stdout.readline().decode()
+        while line != '\n':
+            vocabs.append(line[:-1])
+            line = make_list_prog.stdout.readline().decode()
+        """
         for line in iter(make_list_prog.stdout.readline, b''):
             if line.decode() == '\n':
                 break
@@ -145,6 +154,10 @@ class InfoHandler(BaseHandler):
 class MainHandler(BaseHandler):
     def get(self):
         self.render("index.html")
+
+class DummyHandler(BaseHandler):
+    def get(self):
+        self.render("dummy.html")
         
 
 application = tornado.web.Application([
@@ -152,6 +165,7 @@ application = tornado.web.Application([
     (r"/info", InfoHandler),
     (r"/fb", FeedbackHandler),
     (r"/ws", WebSocketHandler),
+    (r"/dummy", DummyHandler),
     (r"/", MainHandler),
 ])
 

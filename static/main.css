@@ -1,18 +1,18 @@
 .entry {
-	width: 33%;
+	width: 32%;
 	height: 150px;
 	float: left;
 	margin-top: 20px;
 }
 
 .entry-title{
-	font-size: 25px;
-	margin-top: 15px;
+	font-size: 20px;
+	margin-top: 14px;
 	margin-bottom: 10px;
 }
 
 .entry-content{
-	font-size: 16px;
+	font-size: 14px;
 }
 
 .btn-acc{
