@@ -304,6 +304,24 @@ int main(int argc, char * argv[])
 				continue;
 			
 			add_term(s, tagger, k1, k2, k3, 0);
+			if(sscanf(buf, "%s %s", str, tagger) != EOF)
+				{
+					strcpy(new_str, original_word);
+					strcat(new_str, " ");
+					strcat(new_str, str);
+					strcpy(str2, s);
+					if(to_valid_word(str) == 0)
+						continue;
+					if(find_df(str2) <= 10 && find_df(s) <= 10)
+					{
+						strcat(str2, " ");
+						strcat(str2, s);
+						strcpy(original_word, new_str);
+						//printf("strstr = %s\n", str2);
+						add_term(str2, tagger, k1, k2, k3, 0);
+						//printf("sttt = %s\n", term[now_term-1].o_voc);
+					}
+				}
 		} 	
 		//}
 	}
@@ -387,6 +405,24 @@ int main(int argc, char * argv[])
 					continue;
 				//fprintf(stderr,"add %s\n", s);
 				add_term(s, tagger, k1, k2, k3, 0);
+				if(sscanf(buf, "%s %s", str, tagger) != EOF)
+				{
+					strcpy(new_str, original_word);
+					strcat(new_str, " ");
+					strcat(new_str, str);
+					strcpy(str2, s);
+					if(to_valid_word(str) == 0)
+						continue;
+					if(find_df(str2) <= 10 && find_df(s) <= 10)
+					{
+						strcat(str2, " ");
+						strcat(str2, s);
+						strcpy(original_word, new_str);
+						//printf("strstr = %s\n", str2);
+						add_term(str2, tagger, k1, k2, k3, 0);
+						//printf("sttt = %s\n", term[now_term-1].o_voc);
+					}
+				}
 			}
 			qsort(term, now_term, sizeof(term_t), cmp);
 			for(i = now_term-1; i>=0 && term[i].weight >= filter && i >= now_term-8; i--){
