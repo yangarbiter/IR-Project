@@ -57,10 +57,13 @@ double is_stopword(char *str)//whether the word is a stopword
 void parse_html_tag(char* str)//parse <>, </>
 {
 	char *tmp;
-	int i, flag = 0, tmplen = 0;
+	int i, flag = 0, tmplen = 0, j;
 	tmp = malloc(BUF_SIZE*sizeof(char));
 	for(i = 0; i <= strlen(str); i++)
 	{
+		if(str[i] == '&')
+			while(str[i] != ' ')
+				i++;
 		if(str[i] == '<')
 			flag = 1;
 		else if(str[i] == '>')
@@ -90,7 +93,7 @@ void to_sentence(char* str)//remove all the non-letter char
 	int i, tmplen = 0;
 	tmp = malloc(BUF_SIZE*sizeof(char));
 	for(i = 0; i < strlen(str); i++)
-		if(LETTER(str[i]))
+		if(LETTER(str[i]) || str[i] == '-')
 			tmp[tmplen++] = str[i];
 		else
 		tmp[tmplen++] = ' ';
@@ -115,6 +118,7 @@ int to_valid_word(char* str)
 			else
 				flag = 0;
 	}
+	//printf("str = %s \n", tmp);
 	strcpy(str, tmp);
 	stemstring(str);
 	if(is_stopword(s) || strlen(s) <= 2 )
