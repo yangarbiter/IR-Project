@@ -68,11 +68,11 @@ double CalTh( )
         for( int j = 0 ; j < AnsSz ; j++ )
             MinTh = min( MinTh , (double)EditDis( Ret[i] , Ans[j] ) / (double)Ans[j].length() ) ;
         //printf( "%d: %lf\n" , i , MinTh ) ;
-        //RetTh += MinTh ;
-        RetTh = min( RetTh , MinTh ) ;
+        RetTh += MinTh ;
+        //RetTh = min( RetTh , MinTh ) ;
     }
-    //return RetTh / (double)RetSz ;
-    return RetTh ;
+    return RetTh / (double)RetSz ;
+    //return RetTh ;
 }
 int main( int argc , char *argv[ ] )
 {
