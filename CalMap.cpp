@@ -59,20 +59,37 @@ bool CheckMatch( int Target )
     }
     return 0 ;
 }
+double CalTh( )
+{
+    double MinTh , RetTh = 10000000.0 ;
+    for( int i = 0 ; i < RetSz ; i++ )
+    {
+        MinTh = 10000000.0 ;
+        for( int j = 0 ; j < AnsSz ; j++ )
+            MinTh = min( MinTh , (double)EditDis( Ret[i] , Ans[j] ) / (double)Ans[j].length() ) ;
+        //printf( "%d: %lf\n" , i , MinTh ) ;
+        //RetTh += MinTh ;
+        RetTh = min( RetTh , MinTh ) ;
+    }
+    //return RetTh / (double)RetSz ;
+    return RetTh ;
+}
 int main( int argc , char *argv[ ] )
 {
-    if( argc != 4 )
+    if( argc != 3 )
     {
         printf( "Parameters Error!\n" ) ;
-        printf( "Usage: ./a.out Yor_Ans.txt  Correct_Ans.txt Thredhold" ) ;
+        printf( "Usage: ./a.out Yor_Ans.txt  Correct_Ans.txt\n" ) ;
         return 0 ;
     }
-    Th = (double) atof( argv[3] ) ;
+    //Th = (double) atof( argv[3] ) ;
     double SinglePre ;
     // 1:Ret  2:Ans
     ReadFiles( argv[1] , argv[2] ) ;
     SingleMap = 0.0 ;
     MatchCnt  = 0.0 ;
+    Th = CalTh( ) ;
+    printf( "%.4lf\n" , Th ) ;
     for( int i = 0 ; i < RetSz ; i++ )
         if( CheckMatch( i ) )
         {
@@ -81,7 +98,8 @@ int main( int argc , char *argv[ ] )
             SinglePre += MatchCnt / (double)(i+1) ;
         }
     SingleMap = SinglePre / (double)AnsSz ;
-    //printf( "%.2lf / %.2lf , %d\n" , SingleMap , SinglePre , AnsSz ) ;
-    printf( "%.2lf\n" , SingleMap ) ;
+    printf( "%.2lf / %.2lf / %.2lf , (%d,%d)\n" , SingleMap , SinglePre , MatchCnt , RetSz ,  AnsSz ) ;
+    printf( "MAP %.2lf\n" , SingleMap ) ;
+    printf( "Acc %.2lf / Recall %.2lf\n" , MatchCnt/RetSz , MatchCnt/AnsSz ) ;
     return 0 ;
 }
