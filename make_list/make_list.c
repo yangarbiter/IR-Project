@@ -121,7 +121,7 @@ int to_valid_word(char* str)
 	//printf("str = %s \n", tmp);
 	strcpy(str, tmp);
 	stemstring(str);
-	if(is_stopword(s) || strlen(s) <= 2 )
+	if(is_stopword(s) || strlen(s) <=2  )
 		return 0;//will not be concerned
 	if(flag == 0 && strlen(s) <=4)
 		return 0;//will not be concerned
@@ -180,7 +180,7 @@ int main(int argc, char * argv[])
 	char *buf;
 	buf = malloc(BUF_SIZE*sizeof(char));
 	s = (char *) malloc(i_max+1);
-	double filter = 0.23, k1 = 0.15, k2  = 0.02, k3 = 0.15, decreasing_rate = 0.95;
+	double filter = 0.23, k1 = 0.15, k2  = 0.02, k3 = 0.15, decreasing_rate = 0.97;
 	//fprintf(stderr,"start init\n");
 	if(argc < 5)
 	{
@@ -350,7 +350,7 @@ int main(int argc, char * argv[])
 	{	
 		//printf("gigi");
 		fgets(buf, BUF_SIZE, stdin);
-		//fprintf(stderr,"form stdin get = %s", buf);
+		fprintf(stderr,"form stdin get = %s", buf);
 		if(buf[0] == '&')
 		{
 			for(i = 0 ; i < strlen(buf); i++)
@@ -436,8 +436,8 @@ int main(int argc, char * argv[])
 		else
 		{
 			//printf("ggg\n");
-			//for(i = 0 ; i < now_term ; i++)
-				//term[i].weight *= decreasing_rate;
+			for(i = 0 ; i < now_term ; i++)
+				term[i].weight *= decreasing_rate;
 			to_sentence(buf);
 			fprintf(write_fp, "%s\n", buf);
 			fflush(write_fp);

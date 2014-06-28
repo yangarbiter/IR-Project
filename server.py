@@ -89,17 +89,19 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             
             term_url_pair.append((vocabs[i], msg['url']))
 
+        self.write_message(json.dumps(msgs))
+
         output = "* "
         ret = feedback.getFeedbackTerms(term_url_pair)
-        for p in ret:
+        for p in ret[:2500]:
             if p[1] in used_term: continue
+            if p[0].isnumeric(): continue
             output += p[0] + ' '
             output += p[1] + ' '
         #print(output)
         output += '\n'
         make_list_prog.stdin.write(bytes(output, 'utf-8'))
         make_list_prog.stdin.flush()
-        self.write_message(json.dumps(msgs))
 
         for i in msgs:
             used_term[i['vocab']] = i
@@ -134,10 +136,10 @@ class InfoHandler(BaseHandler):
         PROG_PATH = 'make_list/make_list'
         with open(INFO_PATH, 'w') as f:
             speech_info = {}
-            speech_info['title'] = self.get_argument('title')
-            speech_info['speaker'] = self.get_argument('speaker')
-            speech_info['description'] = self.get_argument('description')
-            speech_info['biography'] = self.get_argument('biography')
+            speech_info['title'] = self.get_argument('title').replace('\n',' ')
+            speech_info['speaker'] = self.get_argument('speaker').replace('\n',' ')
+            speech_info['description'] = self.get_argument('description').replace('\n',' ')
+            speech_info['biography'] = self.get_argument('biography').replace('\n',' ')
             f.write(speech_info['title'] + '\n')
             f.write(speech_info['speaker'] + '\n')
             f.write(speech_info['description'] + '\n')

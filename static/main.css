@@ -1,12 +1,21 @@
+body {
+	background-color: rgb(230, 255, 230);
+}
+
 .entry {
-	width: 32%;
-	height: 150px;
+	width: 32.5%;
+	height: 170px;
 	float: left;
 	margin-top: 20px;
+	margin-right: 0.5%;
+	padding-left: 8px;
+    padding-right: 5px;
+    background-color: rgb(245, 245, 245);
+    border-radius: 10px;
 }
 
 .entry-title{
-	font-size: 20px;
+	font-size: 18px;
 	margin-top: 14px;
 	margin-bottom: 10px;
 }
@@ -18,7 +27,6 @@
 .btn-acc{
 	float: right;
 	margin-top: 7px;
-	margin-right: 20px;
 }
 
 .btn-del{
@@ -28,6 +36,10 @@
 }
 
 .btn-container{
-	margin-top: 15px;
+	margin-top: 16px;
 	margin-bottom: 20px;
+}
+
+#footer{
+    height: 20px;
 }

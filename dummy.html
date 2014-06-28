@@ -9,6 +9,9 @@
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
+	<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/smoothness/jquery-ui.css" />
+	<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
+
 	<script src="static/dummy.js"></script>
 </head>
 <body>
@@ -29,16 +32,17 @@
 			<textarea id="info-title" class="form-control" placeholder="Title" rows='1'></textarea> <br>
 			<div>Speaker</div>
 			<textarea id="info-speaker" class="form-control" placeholder="Speaker" rows='1'></textarea> <br>
-			<div>Description</div>
-			<textarea id="info-description" class="form-control" placeholder="Description"></textarea><br>
 			<div>Biography</div>
-			<textarea id="info-biography" class="form-control" placeholder="Biography"></textarea><br>
+			<textarea id="info-biography" class="form-control" placeholder="Biography" rows='3'></textarea><br>
+			<div>Description</div>
+			<textarea id="info-description" class="form-control" placeholder="Description" rows='6'></textarea><br>
 		</div>
 
 		<div id="result-container" style="display: none;">
 		</div>
 
 		<textarea id="transcription" style="display: none;" readonly="readonly"></textarea>
+	<div id="footer"></div>
 
 	</div>
 </body>

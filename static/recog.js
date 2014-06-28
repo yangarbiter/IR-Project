@@ -30,7 +30,7 @@ window.onload = function(){
 			btn_del.addEventListener('click', function(){
 				var voc = this.id.substr(7, this.id.length-7);
 				$.post("fb", { type: 'remove', vocab: voc});
-				document.getElementById('entry'.concat(voc)).remove();
+				$(this).parent().hide('slow', function(){$(this).remove()});
 			});
 
 			btn_acc.nodeType = "button";
@@ -40,6 +40,7 @@ window.onload = function(){
 			btn_acc.firstChild.className = "glyphicon glyphicon-ok";
 			btn_acc.addEventListener('click', function(){
 				$.post("fb", { type: 'accept', vocab: this.id.substr(7, this.id.length-7)});
+				$(this).parent().effect('shake');
 			});
 
 			title.innerHTML = msg[i].title;
@@ -49,12 +50,16 @@ window.onload = function(){
 			content.innerHTML = msg[i].content;
 			content.className = 'entry-content';
 
-			entry.appendChild(title);
 			entry.appendChild(btn_acc);
 			entry.appendChild(btn_del);
+			entry.appendChild(title);
 			entry.appendChild(content);
 
+			//entry.style.display="none";
+		
 			result_container.appendChild(entry);
+
+			//$("#"+entry.id).fadeIn('slow');
 		}
 	};
 
@@ -84,11 +89,24 @@ window.onload = function(){
 			}
 		}
 	};
+
 	// log errors
 	recognizer.onerror = function(event) {
-		console.log('Recognition error: ' + event.message);
+		console.log('Recognition error: ' + event.error + event.message);
+		if (event.error == 'no-speech') {
+      console.log('info_no_speech');
+    }
+    if (event.error == 'audio-capture') {
+      console.log('info_no_microphone');
+    }
+    if (event.error == 'not-allowed') {
+      if (event.timeStamp - start_timestamp < 100) {
+        console.log('info_blocked');
+      } else {
+        console.log('info_denied');
+      }
+    }
 	};
-
 
 	document.getElementById('btn-start-recog').addEventListener('click', function() {
 		info = {title: $('#info-title').val(),
@@ -104,6 +122,7 @@ window.onload = function(){
 		} catch(ex) {
 			console.log('Recognizer error:' + ex.message);
 		}
+		ws.send(" ");
 	});
 
 	document.getElementById('btn-stop-recog').addEventListener('click', function() {
