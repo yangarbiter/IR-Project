@@ -61,7 +61,7 @@ bool CheckMatch( int Target )
 }
 double CalTh( )
 {
-    double MinTh , RetTh = 10000000.0 ;
+    double MinTh , RetTh = 0.0 ;
     for( int i = 0 ; i < RetSz ; i++ )
     {
         MinTh = 10000000.0 ;
